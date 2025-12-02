@@ -1,0 +1,56 @@
+﻿<Window x:Class="HK_AREA_SEARCH.Views.ProgressDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        mc:Ignorable="d" 
+        Title="Site Selection Analysis Progress" 
+        Height="180" Width="500"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="ToolWindow"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        FontFamily="Microsoft YaHei">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 标题 -->
+        <TextBlock Grid.Row="0" 
+                   Text="Processing..."
+                   FontSize="16"
+                   FontWeight="Bold"
+                   HorizontalAlignment="Center"/>
+
+        <!-- 当前操作描述 -->
+        <TextBlock Grid.Row="2"
+                   x:Name="StatusText"
+                   Text="Initializing..."
+                   FontSize="12"
+                   TextWrapping="Wrap"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Center"/>
+
+        <!-- 进度条 -->
+        <ProgressBar Grid.Row="4"
+                     x:Name="ProgressBar"
+                     Height="25"
+                     Minimum="0"
+                     Maximum="100"
+                     Value="0"/>
+
+        <!-- 百分比文字 -->
+        <TextBlock Grid.Row="4"
+                   Text="{Binding ElementName=ProgressBar, Path=Value, StringFormat={}{0:F0}%}"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   FontWeight="Bold"
+                   FontSize="11"/>
+    </Grid>
+</Window>

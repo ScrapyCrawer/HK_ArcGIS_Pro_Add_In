@@ -44,7 +44,7 @@ namespace HK_AREA_SEARCH.ViewModels
         {
             _inputRasterPath = inputRasterPath;
             _poiItem = poiItem;
-            _title = $"自定义距离间隔 - {poiItem?.DataName ?? "未知数据"}";
+            _title = $"Custom Distance Interval - {poiItem?.DataName ?? "Unknown Data"}";
             ClassItems = new ObservableCollection<IntervalClassItem>();
             // 初始化默认分类
             InitializeDefaultClasses();
@@ -182,7 +182,7 @@ namespace HK_AREA_SEARCH.ViewModels
             {
                 // 出错则使用默认值，并写入日志和弹窗提示
                 System.Diagnostics.Debug.WriteLine($"Error getting raster min/max: {ex.Message}");
-                MessageBox.Show($"获取栅格数据最小值和最大值时出错，使用默认分类值。\n错误信息: {ex.Message}", "错误");
+                MessageBox.Show($"Error retrieving raster min/max values. Using default classification.\nError: {ex.Message}", "Error");
             }
         }
 

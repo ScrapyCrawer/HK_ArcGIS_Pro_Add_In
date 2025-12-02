@@ -3,7 +3,7 @@
 POI	诊所、医院、邮局、市场、学校、废物处理厂、污水处理厂
 交通	公交路线、公交站、地铁出入口、地铁线路、道路
 人口密度	只有2021，HK五年一次人口普查，下次是2026
-约束条件	HK坡度栅格、地形大于54度陡峭地带、27类土地利用、特别规划区域、郊野公园
+约束条件	HK坡度栅格、地形大于40度陡峭地带、27类土地利用、特别规划区域、郊野公园
 地区数据	HK海岸线矢量
 
 二、技术路线（示例）
@@ -52,3 +52,52 @@ C.	相交操作取适合选址地区及评分功能：将整个地区的评分�
 （5）	输出中，能够点击右边小图标打开文件路径选择输出路径以及文件名，仅可输出到一个路径以及一个文件名
 （6）	右下角为运行按钮，点击后可运行选址分析
 
+HK_AREA_SEARCH/
+├── 📁 Business/                    # 核心业务逻辑
+│   ├── 📁 Divide/                  # ✅ 模块1: 可建设土地划分
+│   │   ├── DivideService.cs        #    主服务类
+│   │   ├── GeometryProcessor.cs    #    几何处理
+│   │   └── IDivideService.cs       #    接口定义
+│   │
+│   ├── 📁 Distance/                # ✅ 模块2: 距离计算
+│   │   ├── DistanceService.cs      #    主服务类
+│   │   ├── EuclideanDistanceCalculator.cs  # 欧氏距离计算
+│   │   ├── RasterReclassifier.cs   #    栅格重分类
+│   │   ├── NoDataHandler.cs        #    NoData处理
+│   │   └── IDistanceService.cs     #    接口定义
+│   │
+│   └── 📁 Rating/                  # ⚠️ 模块3: 评分计算（部分完成）
+│       ├── RatingService.cs        #    主服务类
+│       ├── RasterCalculator.cs     #    栅格计算器
+│       ├── RasterToVectorConverter.cs  # 栅格转矢量
+│       └── IntersectionAnalyzer.cs #    相交分析
+│
+├── 📁 Models/                      # 数据模型
+│   ├── ConstraintDataItem.cs       #    约束条件数据项
+│   ├── POIDataItem.cs              #    POI数据项
+│   ├── IntervalClassItem.cs        #    分类间隔项
+│   └── ValidationResult.cs         #    验证结果
+│
+├── 📁 Infrastructure/              # 基础设施
+│   ├── 📁 Services/
+│   │   ├── TempFileManager.cs      #    临时文件管理
+│   │   ├── LogService.cs           #    日志服务
+│   │   └── LayerManager.cs         #    图层管理
+│   │
+│   └── 📁 Helpers/
+│       ├── ValidationHelper.cs     #    输入验证
+│       ├── FilePathHelper.cs       #    文件路径处理
+│       └── DragDropHelper.cs       #    拖拽支持
+│
+├── 📁 ViewModels/                  # MVVM视图模型
+│   └── CustomIntervalDialogViewModel.cs  # 自定义间隔对话框
+│
+├── 📁 Views/                       # UI界面
+│   └── CustomIntervalDialog.xaml  #    自定义间隔窗口
+│
+├── 📁 Common/                      # 公共常量
+│   └── Constants.cs                #    常量定义
+│
+└── 📁 UI/                          # 主界面
+    ├── main_dockpane.xaml          #    主面板UI
+    └── main_dockpaneViewModel.cs   #    主面板逻辑

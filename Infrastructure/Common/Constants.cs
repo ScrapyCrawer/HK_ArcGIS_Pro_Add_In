@@ -12,10 +12,17 @@ namespace HK_AREA_SEARCH.Common
         // 字段名常量
         public const string RATING_FIELD = "gridcode";
         public const string VALUE_FIELD = "VALUE";
+        public const string AREA_FIELD = "AREA_M2";
 
         // 分类常量
         public const int NUM_CLASSES = 10;
         public const string CLASSIFICATION_METHOD = "EQUAL_INTERVAL";
+
+        // 面积过滤常量
+        /// <summary>
+        /// 最小地块面积阈值(平方米) - 参考2017年粉嶺上水最小卖地面积
+        /// </summary>
+        public const double MIN_PARCEL_AREA = 200.7;
 
         // 临时文件夹
         public const string TEMP_FOLDER_NAME = "HK_SEARCH_TEMP";

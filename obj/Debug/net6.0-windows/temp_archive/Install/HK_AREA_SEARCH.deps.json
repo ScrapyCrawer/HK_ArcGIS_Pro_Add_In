@@ -1,0 +1,24 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v6.0/win10-x64",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v6.0": {},
+    ".NETCoreApp,Version=v6.0/win10-x64": {
+      "HK_AREA_SEARCH/1.0.0": {
+        "runtime": {
+          "HK_AREA_SEARCH.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "HK_AREA_SEARCH/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

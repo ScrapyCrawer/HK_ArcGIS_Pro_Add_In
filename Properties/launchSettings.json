@@ -2,7 +2,7 @@
   "profiles": {
     "HK_AREA_SEARCH": {
       "commandName": "Executable",
-      "executablePath": "D:\\ArcGIS Pro\\bin\\ArcGISPro.exe"
+      "executablePath": "D:\\arcgispro\\install\\bin\\ArcGISPro.exe"
     }
   }
 }

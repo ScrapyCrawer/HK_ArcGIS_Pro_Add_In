@@ -168,25 +168,42 @@ namespace HK_AREA_SEARCH.Distance
                 // 使用自定义间隔
                 if (poiItem?.CustomInterval == true)
                 {
-                    // 弹出新窗口要求输入自定义分类间隔，需要在UI线程中执行
-                    var customIntervalClass = await ShowCustomIntervalDialogAsync(inputRasterPath, poiItem);
-
-                    // 确定按钮（没有取消对话框），且有效的分类设置
-                    if (customIntervalClass != null && customIntervalClass.Count > 0)
+                    // ⭐ 检查是否已有保存的自定义间隔配置
+                    if (poiItem.CustomIntervalClasses != null && poiItem.CustomIntervalClasses.Count > 0)
                     {
+                        System.Diagnostics.Debug.WriteLine($"========== Using Saved Custom Intervals ==========");
+                        System.Diagnostics.Debug.WriteLine($"POI: {poiItem.DataName}");
+                        System.Diagnostics.Debug.WriteLine($"Intervals count: {poiItem.CustomIntervalClasses.Count}");
+                        
+                        // ⭐ 使用已保存的配置,不再弹出对话框
                         return await reclassifier.CreateCustomClasses(
                             inputRasterPath,
-                            customIntervalClass
+                            poiItem.CustomIntervalClasses
                         );
                     }
                     else
                     {
-                        // 用户取消对话框，使用默认等间隔分类
-                        return await reclassifier.CreateEqualIntervalClasses(
-                            inputRasterPath,
-                            Constants.NUM_CLASSES,
-                            poiItem
-                        );
+                        // ⭐ 如果没有保存的配置,弹出对话框(理论上不应该发生)
+                        System.Diagnostics.Debug.WriteLine($"⚠️ No saved custom intervals, showing dialog...");
+                        
+                        var customIntervalClass = await ShowCustomIntervalDialogAsync(inputRasterPath, poiItem);
+
+                        if (customIntervalClass != null && customIntervalClass.Count > 0)
+                        {
+                            return await reclassifier.CreateCustomClasses(
+                                inputRasterPath,
+                                customIntervalClass
+                            );
+                        }
+                        else
+                        {
+                            // 用户取消对话框,使用默认等间隔分类
+                            return await reclassifier.CreateEqualIntervalClasses(
+                                inputRasterPath,
+                                Constants.NUM_CLASSES,
+                                poiItem
+                            );
+                        }
                     }
                 }
                 else
@@ -201,7 +218,6 @@ namespace HK_AREA_SEARCH.Distance
             }
             catch (Exception ex)
             {
-                // 如果重分类失败，提供更具体的错误信息
                 throw new Exception($"创建分类失败: {ex.Message}", ex);
             }
         }

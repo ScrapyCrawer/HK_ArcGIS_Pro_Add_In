@@ -9,7 +9,9 @@
         WindowStartupLocation="CenterOwner"
         SizeToContent="Height"
         MinHeight="250"
-        MinWidth="400">
+        MinWidth="400"
+        FontFamily="Microsoft YaHei">
+    <!-- ⭐ 添加 FontFamily="Microsoft YaHei" -->
     
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -27,15 +29,17 @@
                   AlternatingRowBackground="LightGray"
                   AlternationCount="2">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="开始值" 
-                                    Width="*">
+                <!-- 开始值列 -->
+                <DataGridTextColumn Header="Start Value" Width="*">
                     <DataGridTextColumn.Binding>
-                        <Binding Path="StartValue" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged" />
+                        <Binding Path="StartValue" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged" StringFormat="F2"/>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="Background" Value="Transparent"/>
                             <Setter Property="HorizontalAlignment" Value="Right"/>
+                            <Setter Property="FontFamily" Value="Microsoft YaHei"/>
+                            <!-- ⭐ 表格字体 -->
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding HasStartValueError}" Value="True">
                                     <Setter Property="Foreground" Value="Red"/>
@@ -43,16 +47,24 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.EditingElementStyle>
+                        <Style TargetType="TextBox">
+                            <Setter Property="HorizontalContentAlignment" Value="Right"/>
+                            <Setter Property="FontFamily" Value="Microsoft YaHei"/>
+                        </Style>
+                    </DataGridTextColumn.EditingElementStyle>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="结束值" 
-                                    Width="*">
+                
+                <!-- 结束值列 -->
+                <DataGridTextColumn Header="End Value" Width="*">
                     <DataGridTextColumn.Binding>
-                        <Binding Path="EndValue" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged" />
+                        <Binding Path="EndValue" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged" StringFormat="F2"/>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="Background" Value="Transparent"/>
                             <Setter Property="HorizontalAlignment" Value="Right"/>
+                            <Setter Property="FontFamily" Value="Microsoft YaHei"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding HasEndValueError}" Value="True">
                                     <Setter Property="Foreground" Value="Red"/>
@@ -60,21 +72,43 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.EditingElementStyle>
+                        <Style TargetType="TextBox">
+                            <Setter Property="HorizontalContentAlignment" Value="Right"/>
+                            <Setter Property="FontFamily" Value="Microsoft YaHei"/>
+                        </Style>
+                    </DataGridTextColumn.EditingElementStyle>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="类别值" 
+                
+                <!-- 类别值列 -->
+                <DataGridTextColumn Header="Class Value" 
                                     Binding="{Binding ClassValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                                    Width="*"/>
+                                    Width="*">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="FontFamily" Value="Microsoft YaHei"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.EditingElementStyle>
+                        <Style TargetType="TextBox">
+                            <Setter Property="HorizontalContentAlignment" Value="Right"/>
+                            <Setter Property="FontFamily" Value="Microsoft YaHei"/>
+                        </Style>
+                    </DataGridTextColumn.EditingElementStyle>
+                </DataGridTextColumn>
             </DataGrid.Columns>
         </DataGrid>
         
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="确定" 
+            <Button Content="OK" 
                     Command="{Binding OKCommand}" 
                     Width="60" Height="25" 
-                    Margin="0,0,5,0"/>
-            <Button Content="取消" 
+                    Margin="0,0,5,0"
+                    FontFamily="Microsoft YaHei"/>
+            <Button Content="Cancel" 
                     Command="{Binding CancelCommand}" 
-                    Width="60" Height="25"/>
+                    Width="60" Height="25"
+                    FontFamily="Microsoft YaHei"/>
         </StackPanel>
     </Grid>
 </Window>

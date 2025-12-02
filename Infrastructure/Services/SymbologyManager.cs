@@ -16,65 +16,38 @@ namespace HK_AREA_SEARCH.Infrastructure.Services
     public class SymbologyManager
     {
         /// <summary>
-        /// 应用多级色彩
+        /// ⭐ 简化: 应用默认单一符号 (蓝色多边形)
         /// </summary>
         /// <param name="layer">图层对象</param>
-        /// <param name="fieldName">分类字段名</param>
+        /// <param name="fieldName">分类字段名 (暂时不使用)</param>
         /// <returns>异步任务</returns>
         public async Task ApplyGraduatedColors(Layer layer, string fieldName)
         {
-            await QueuedTask.Run(() =>
-            {
-                try
-                {
-                    // 对于要素图层
-                    if (layer is FeatureLayer featureLayer)
-                    {
-                        // 创建简单的唯一值渲染器作为替代
-                        var renderer = new CIMUniqueValueRenderer()
-                        {
-                            Fields = new string[] { fieldName }
-                        };
-
-                        // 设置渲染器
-                        featureLayer.SetRenderer(renderer);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception($"应用分级色彩失败: {ex.Message}", ex);
-                }
-            });
+            // ⭐ 不做任何操作,让 ArcGIS Pro 使用默认符号
+            await Task.CompletedTask;
+            
+            System.Diagnostics.Debug.WriteLine($"使用默认符号: {layer?.Name}");
         }
 
         /// <summary>
         /// 设置分类字段
         /// </summary>
-        /// <param name="layer">图层对象</param>
-        /// <param name="fieldName">字段名</param>
-        /// <returns>异步任务</returns>
         public async Task SetClassificationField(Layer layer, string fieldName)
         {
-            await Task.CompletedTask; // 该功能通常在应用渲染器时设置
+            await Task.CompletedTask;
         }
 
         /// <summary>
         /// 创建色带
         /// </summary>
-        /// <returns>CIMColorRamp对象</returns>
         public CIMColorRamp CreateColorRamp()
         {
-            // For now, return null since specific color ramp types may vary by ArcGIS Pro version
-            // In a real implementation, this would create an appropriate color ramp
             return null;
         }
 
         /// <summary>
         /// 应用渲染器
         /// </summary>
-        /// <param name="layer">图层对象</param>
-        /// <param name="renderer">渲染器</param>
-        /// <returns>异步任务</returns>
         public async Task ApplyRenderer(Layer layer, CIMRenderer renderer)
         {
             await QueuedTask.Run(() =>

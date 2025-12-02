@@ -16,11 +16,13 @@ namespace HK_AREA_SEARCH.Rating
         /// <param name="weights">权重字典</param>
         /// <param name="suitableAreaPath">可建设土地路径</param>
         /// <param name="outputPath">输出路径</param>
+        /// <param name="minArea">最小面积阈值(平方米)</param>
         /// <returns>最终结果文件路径</returns>
         Task<string> ExecuteAsync(
             Dictionary<string, string> rasterPaths,
             Dictionary<string, double> weights,
             string suitableAreaPath,
-            string outputPath);
+            string outputPath,
+            double? minArea = null);  // 新增参数
     }
 }

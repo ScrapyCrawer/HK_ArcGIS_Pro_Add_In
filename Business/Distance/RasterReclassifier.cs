@@ -121,16 +121,15 @@ namespace HK_AREA_SEARCH.Distance
 
                     if (result.IsFailed)
                     {
-                        // 将错误消息列表转换为字符串
                         string errorMessages = string.Join("; ", result.ErrorMessages);
-                        System.Diagnostics.Debug.WriteLine($"等间隔分类失败: {errorMessages}");
+                        System.Diagnostics.Debug.WriteLine($"Equal interval classification failed: {errorMessages}");
                     }
 
                     return outputRasterPath;
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception($"创建等间隔分类时发生错误: {ex.Message}", ex);
+                    throw new Exception($"Error creating equal interval classification: {ex.Message}", ex);
                 }
             });
         }
@@ -212,10 +211,10 @@ namespace HK_AREA_SEARCH.Distance
                     // 使用重分类工具
                     var parameters = Geoprocessing.MakeValueArray(
                         inputRasterPath,      // 输入栅格
-                        "VALUE",             // 重分类字段（注意是大写）
+                        "VALUE",             // 重分类字段
                         remapExpression,     // 重映射表达式
                         outputRasterPath,    // 输出栅格
-                        "DATA",              // 缺失值处理
+                        "NoDATA",              // 缺失值处理
                         ""                   // WHERE子句
                     );
 
@@ -233,16 +232,15 @@ namespace HK_AREA_SEARCH.Distance
 
                     if (result.IsFailed)
                     {
-                        // 将错误消息列表转换为字符串
                         string errorMessages = string.Join("; ", result.ErrorMessages);
-                        throw new Exception($"自定义分类失败: {errorMessages}");
+                        throw new Exception($"Custom classification failed: {errorMessages}");
                     }
 
                     return outputRasterPath;
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception($"创建自定义分类时发生错误: {ex.Message}", ex);
+                    throw new Exception($"Error creating custom classification: {ex.Message}", ex);
                 }
             });
         }
