@@ -489,13 +489,47 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
+                            <!-- 表格标题 -->
                             <Border Grid.Row="0" 
                                     CornerRadius="3,3,0,0"
                                     Padding="10,5">
-                                <TextBlock Text="📊 Factor Scores" 
-                                           FontSize="14" 
-                                           FontWeight="Bold" 
-                                           FontFamily="Microsoft YaHei"/>  <!-- ✅ 删除了 Foreground="Black" -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- 标题 -->
+                                    <TextBlock Grid.Column="0"
+                                               Text="📊 Factor Scores" 
+                                               FontSize="14" 
+                                               FontWeight="Bold" 
+                                               FontFamily="Microsoft YaHei"
+                                               VerticalAlignment="Center"/>
+
+                                    <!-- ⭐ 浏览地块按钮 -->
+                                    <Button Grid.Column="1"
+                                            Content="{Binding PlotListeningButtonText}"
+                                            Command="{Binding TogglePlotListeningCommand}"
+                                            FontSize="11"
+                                            FontFamily="Microsoft YaHei"
+                                            Padding="10,5"
+                                            Foreground="White"
+                                            BorderThickness="0"
+                                            ToolTip="Click to enable/disable plot browsing mode" BorderBrush="#FFD81A1A">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Background" Value="{Binding PlotListeningButtonColor}"/>
+                                                <Setter Property="Cursor" Value="Hand"/>
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Opacity" Value="0.8"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </Grid>
                             </Border>
 
                             <DataGrid Grid.Row="1" 

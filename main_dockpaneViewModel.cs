@@ -17,6 +17,13 @@ using HK_AREA_SEARCH.Infrastructure.Helpers;
 using HK_AREA_SEARCH.Common;
 using HK_AREA_SEARCH.Views;
 using HK_AREA_SEARCH.ViewModels;
+using ArcGIS.Desktop.Mapping;
+using ArcGIS.Desktop.Mapping.Events;
+using ArcGIS.Core.Data;
+using ArcGIS.Core.Geometry;
+using ArcGIS.Desktop.Framework.Threading.Tasks;
+using System.Text;
+using ProgressDialog = HK_AREA_SEARCH.Views.ProgressDialog;
 
 namespace HK_AREA_SEARCH
 {
@@ -190,6 +197,37 @@ namespace HK_AREA_SEARCH
             }
         }
 
+        private bool _isPlotListeningEnabled;
+        /// <summary>
+        /// 是否启用地块监听
+        /// </summary>
+        public bool IsPlotListeningEnabled
+        {
+            get { return _isPlotListeningEnabled; }
+            set 
+            { 
+                SetProperty(ref _isPlotListeningEnabled, value, () => IsPlotListeningEnabled);
+                NotifyPropertyChanged(() => PlotListeningButtonText);
+                NotifyPropertyChanged(() => PlotListeningButtonColor);
+            }
+        }
+
+        /// <summary>
+        /// 浏览地块按钮文字
+        /// </summary>
+        public string PlotListeningButtonText
+        {
+            get { return IsPlotListeningEnabled ? "🔴 Stop Browsing" : "🟢 Browse Plots"; }
+        }
+
+        /// <summary>
+        /// 浏览地块按钮颜色
+        /// </summary>
+        public string PlotListeningButtonColor
+        {
+            get { return IsPlotListeningEnabled ? "#FFDC143C" : "#FF32CD32"; }
+        }
+
         #endregion
 
         #endregion
@@ -204,6 +242,7 @@ namespace HK_AREA_SEARCH
         public ICommand ClearConstraintsCommand { get; private set; }
         public ICommand ClearPOIsCommand { get; private set; }
         public ICommand BrowseResultShapefileCommand { get; private set; }  // ⭐ 添加命令
+        public ICommand TogglePlotListeningCommand { get; private set; }  // ⭐ 新增
 
         #endregion
 
@@ -213,6 +252,11 @@ namespace HK_AREA_SEARCH
         {
             InitializeCollections();
             InitializeCommands();
+            
+            // ⭐ 订阅地图选择变化事件
+            MapSelectionChangedEvent.Subscribe(OnMapSelectionChanged);
+            
+            System.Diagnostics.Debug.WriteLine("✅ Map selection event subscribed");
         }
 
         private void InitializeCollections()
@@ -234,6 +278,7 @@ namespace HK_AREA_SEARCH
             ClearConstraintsCommand = new RelayCommand(ClearConstraints, (object parameter) => true);
             ClearPOIsCommand = new RelayCommand(ClearPOIs, (object parameter) => true);
             BrowseResultShapefileCommand = new RelayCommand(BrowseResultShapefile, (object parameter) => true);  // ⭐ 初始化命令
+            TogglePlotListeningCommand = new RelayCommand(TogglePlotListening, (object parameter) => true);  // ⭐ 初始化命令
         }
 
         #endregion
@@ -540,7 +585,7 @@ namespace HK_AREA_SEARCH
                     {
                         System.Diagnostics.Debug.WriteLine($"  - {Path.GetFileName(file)}");
                     }
-                    System.Diagnostics.Debug.WriteLine($"=======================================");
+                    System.Diagnostics.Debug.WriteLine($"========================================");
                 }
             }
         }
@@ -775,18 +820,385 @@ namespace HK_AREA_SEARCH
             }
         }
 
-        #region DockPane方法
+        #region 地块监听功能
 
-        internal static void Show()
+        /// <summary>
+        /// 切换地块监听状态
+        /// </summary>
+        private void TogglePlotListening(object parameter)
         {
-            DockPane pane = FrameworkApplication.DockPaneManager.Find(_dockPaneID);
-            if (pane == null)
-                return;
+            IsPlotListeningEnabled = !IsPlotListeningEnabled;
+            
+            if (IsPlotListeningEnabled)
+            {
+                // 检查是否已选择结果 Shapefile
+                if (string.IsNullOrEmpty(ResultShapefilePath))
+                {
+                    MessageBox.Show("Please select a result shapefile first!", 
+                                  "No Shapefile Selected", 
+                                  System.Windows.MessageBoxButton.OK, 
+                                  System.Windows.MessageBoxImage.Warning);
+                    IsPlotListeningEnabled = false;
+                    return;
+                }
+                
+                System.Diagnostics.Debug.WriteLine("✅ Plot listening ENABLED");
+                MessageBox.Show("Plot browsing mode enabled!\nClick on any plot on the map to view details.", 
+                               "Browse Mode ON", 
+                               System.Windows.MessageBoxButton.OK, 
+                               System.Windows.MessageBoxImage.Information);
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("⛔ Plot listening DISABLED");
+            }
+        }
 
-            pane.Activate();
+        /// <summary>
+        /// 地图选择变化事件处理
+        /// </summary>
+        private void OnMapSelectionChanged(MapSelectionChangedEventArgs args)
+        {
+            // ⭐ 只有启用监听时才处理
+            if (!IsPlotListeningEnabled)
+            {
+                System.Diagnostics.Debug.WriteLine("⚠️ Plot listening is disabled, ignoring selection");
+                return;
+            }
+            
+            // ⭐ 检查是否已设置结果 Shapefile 路径
+            if (string.IsNullOrEmpty(ResultShapefilePath))
+            {
+                System.Diagnostics.Debug.WriteLine("⚠️ Result Shapefile Path not set, ignoring selection");
+                return;
+            }
+
+            _ = QueuedTask.Run(async () =>
+            {
+                try
+                {
+                    System.Diagnostics.Debug.WriteLine("========== Map Selection Changed ==========");
+                    
+                    var selection = args.Selection;
+                    if (selection == null || selection.Count == 0)
+                    {
+                        System.Diagnostics.Debug.WriteLine("No selection");
+                        return;
+                    }
+
+                    // ⭐ 修复：将 SelectionSet 转换为 Dictionary
+                    var layers = selection.ToDictionary();
+                    
+                    // ⭐ 查找匹配结果 Shapefile 的图层
+                    FeatureLayer resultLayer = null;
+                    string resultFileName = System.IO.Path.GetFileNameWithoutExtension(ResultShapefilePath);
+                    
+                    foreach (var kvp in layers)
+                    {
+                        var layer = kvp.Key as FeatureLayer;
+                        if (layer != null && layer.Name.Contains(resultFileName))
+                        {
+                            resultLayer = layer;
+                            break;
+                        }
+                    }
+
+                    if (resultLayer == null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Result layer not found. Looking for: {resultFileName}");
+                        return;
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"Result layer found: {resultLayer.Name}");
+
+                    var selectedOIDs = resultLayer.GetSelection().GetObjectIDs();
+                    if (selectedOIDs.Count == 0)
+                    {
+                        System.Diagnostics.Debug.WriteLine("No features selected");
+                        return;
+                    }
+
+                    long firstOID = selectedOIDs.First();
+                    System.Diagnostics.Debug.WriteLine($"Selected OID: {firstOID}");
+
+                    await ExtractPlotDataAsync(resultLayer, firstOID);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"❌ Error in OnMapSelectionChanged: {ex.Message}");
+                }
+            });
+        }
+
+        /// <summary>
+        /// 提取选中地块的数据
+        /// </summary>
+        private async System.Threading.Tasks.Task ExtractPlotDataAsync(FeatureLayer layer, long oid)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($">>> Extracting data for OID: {oid}");
+
+                var plotInfo = new PlotInfo { ObjectID = oid };
+
+                // 创建查询过滤器
+                var queryFilter = new QueryFilter
+                {
+                    ObjectIDs = new List<long> { oid }
+                };
+
+                // 查询要素
+                using (var rowCursor = layer.Search(queryFilter))
+                {
+                    if (rowCursor.MoveNext())
+                    {
+                        using (var row = rowCursor.Current)
+                        {
+                            // 1. 提取 gridcode（综合评分）
+                            try
+                            {
+                                plotInfo.GridCode = Convert.ToDouble(row["gridcode"]);
+                                System.Diagnostics.Debug.WriteLine($"GridCode: {plotInfo.GridCode}");
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"⚠️ gridcode 字段不存在或无效: {ex.Message}");
+                                plotInfo.GridCode = 0;
+                            }
+
+                            // 2. 提取所有 S_ 开头的单因子得分字段
+                            var definition = row.GetTable().GetDefinition();
+                            foreach (var field in definition.GetFields())
+                            {
+                                if (field.Name.StartsWith("S_") && 
+                                    (field.FieldType == FieldType.Double || field.FieldType == FieldType.Single))
+                                {
+                                    try
+                                    {
+                                        var value = Convert.ToDouble(row[field.Name]);
+                                        plotInfo.FactorScores[field.Name] = value;
+                                        System.Diagnostics.Debug.WriteLine($"  {field.Name}: {value:F2}");
+                                    }
+                                    catch
+                                    {
+                                        // 忽略无效字段
+                                    }
+                                }
+                            }
+
+                            // 3. 提取几何范围
+                            if (row is Feature feature)
+                            {
+                                var geometry = feature.GetShape();
+                                if (geometry != null)
+                                {
+                                    plotInfo.Extent = geometry.Extent;
+                                    
+                                    // 计算面积（如果是多边形）
+                                    if (geometry is Polygon polygon)
+                                    {
+                                        plotInfo.Area = polygon.Area;
+                                        System.Diagnostics.Debug.WriteLine($"Area: {plotInfo.Area:F2} m²");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 4. 更新 UI（必须在 UI 线程）
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    UpdatePlotDetails(plotInfo);
+                });
+
+                // 5. 缩放到地块
+                await ZoomToPlotAsync(plotInfo.Extent);
+
+                System.Diagnostics.Debug.WriteLine("✅ Plot data extracted successfully");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"❌ ExtractPlotDataAsync failed: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 更新地块详情界面
+        /// </summary>
+        private void UpdatePlotDetails(PlotInfo plotInfo)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine(">>> Updating plot details UI");
+
+                // 保存当前地块信息
+                SelectedPlotInfo = plotInfo;
+
+                // 1. 生成表格数据
+                FactorScores = new ObservableCollection<FactorScoreItem>();
+                
+                foreach (var kvp in plotInfo.FactorScores.OrderByDescending(x => x.Value))
+                {
+                    var item = new FactorScoreItem
+                    {
+                        FactorName = kvp.Key,
+                        DisplayName = ConvertFactorNameToDisplay(kvp.Key),
+                        Score = kvp.Value
+                    };
+                    
+                    FactorScores.Add(item);
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Factor scores count: {FactorScores.Count}");
+
+                // 2. 生成文字描述
+                PlotDescription = GeneratePlotDescription(plotInfo);
+
+                // 3. 自动切换到地块详情选项卡
+                SelectedTabIndex = 1;
+
+                System.Diagnostics.Debug.WriteLine("✅ Plot details updated");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"❌ UpdatePlotDetails failed: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 生成地块描述文字
+        /// </summary>
+        private string GeneratePlotDescription(PlotInfo plotInfo)
+        {
+            var sb = new StringBuilder();
+
+            sb.AppendLine($"📍 Plot Analysis Report");
+            sb.AppendLine($"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            sb.AppendLine();
+
+            sb.AppendLine($"🎯 Overall Score: {plotInfo.GridCode:F2} / 10");
+            sb.AppendLine();
+
+            string rating = plotInfo.GridCode >= 8 ? "Excellent (极佳)" :
+                            plotInfo.GridCode >= 6 ? "Good (适宜)" :
+                            plotInfo.GridCode >= 4 ? "Fair (一般)" :
+                            "Poor (较差)";
+            sb.AppendLine($"📊 Overall Rating: {rating}");
+            sb.AppendLine();
+
+            if (plotInfo.Area.HasValue)
+            {
+                sb.AppendLine($"📐 Area: {plotInfo.Area.Value:N2} m²");
+                sb.AppendLine();
+            }
+
+            if (plotInfo.FactorScores.Count > 0)
+            {
+                var orderedScores = plotInfo.FactorScores.OrderByDescending(x => x.Value).ToList();
+                var maxFactor = orderedScores.First();
+                var minFactor = orderedScores.Last();
+
+                sb.AppendLine($"✅ Main Advantages:");
+                sb.AppendLine($"   • {ConvertFactorNameToDisplay(maxFactor.Key)}: {maxFactor.Value:F2} / 10");
+                sb.AppendLine();
+
+                sb.AppendLine($"⚠️ Areas for Attention:");
+                sb.AppendLine($"   • {ConvertFactorNameToDisplay(minFactor.Key)}: {minFactor.Value:F2} / 10");
+                sb.AppendLine();
+
+                sb.AppendLine($"📋 Detailed Scores:");
+                foreach (var score in orderedScores)
+                {
+                    string bar = new string('█', (int)(score.Value / 2));
+                    sb.AppendLine($"   • {ConvertFactorNameToDisplay(score.Key),-20} {bar} {score.Value:F2}");
+                }
+            }
+            else
+            {
+                sb.AppendLine("⚠️ No factor score data available.");
+            }
+
+            sb.AppendLine();
+            sb.AppendLine($"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            sb.AppendLine($"Generated at: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// 转换因子字段名为显示名称
+        /// </summary>
+        private string ConvertFactorNameToDisplay(string factorName)
+        {
+            string name = factorName.StartsWith("S_") ? factorName.Substring(2) : factorName;
+
+            var nameMap = new Dictionary<string, string>
+            {
+                { "Traffic", "Traffic Accessibility" },
+                { "Facility", "Nearby Facilities" },
+                { "Noise", "Noise Level" },
+                { "Green", "Green Space" },
+                { "School", "School Proximity" },
+                { "Hospital", "Hospital Proximity" },
+                { "Metro", "Metro Station Proximity" },
+                { "Park", "Park Proximity" }
+            };
+
+            return nameMap.ContainsKey(name) ? nameMap[name] : name;
+        }
+
+        /// <summary>
+        /// 缩放到选中地块
+        /// </summary>
+        private async System.Threading.Tasks.Task ZoomToPlotAsync(Envelope extent)
+        {
+            if (extent == null)
+            {
+                System.Diagnostics.Debug.WriteLine("⚠️ Extent is null, cannot zoom");
+                return;
+            }
+
+            await QueuedTask.Run(() =>
+            {
+                try
+                {
+                    var mapView = MapView.Active;
+                    if (mapView == null)
+                    {
+                        System.Diagnostics.Debug.WriteLine("⚠️ No active map view");
+                        return;
+                    }
+
+                    var expandedExtent = extent.Expand(1.2, 1.2, true);
+                    mapView.ZoomTo(expandedExtent, TimeSpan.FromSeconds(0.8));
+
+                    System.Diagnostics.Debug.WriteLine($"✅ Zoomed to plot extent");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"❌ ZoomToPlotAsync failed: {ex.Message}");
+                }
+            });
         }
 
         #endregion
+
+        #region DockPane方法
+
+/// <summary>
+/// 显示 DockPane
+/// </summary>
+internal static void Show()
+{
+    DockPane pane = FrameworkApplication.DockPaneManager.Find(_dockPaneID);
+    if (pane == null)
+        return;
+
+    pane.Activate();
+}
+
+#endregion
     }
 
     internal class main_dockpane_ShowButton : Button
