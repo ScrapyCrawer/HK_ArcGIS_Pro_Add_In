@@ -13,7 +13,7 @@ namespace HK_AREA_SEARCH.Rating
     public class RatingService : IRatingService
     {
         private readonly TempFileManager _tempFileManager;
-        private double? _minArea;  // ⭐ 新增: 存储最小面积
+        private double? _minArea;
 
         public RatingService(TempFileManager tempFileManager)
         {
@@ -34,18 +34,17 @@ namespace HK_AREA_SEARCH.Rating
             Dictionary<string, double> weights,
             string suitableAreaPath,
             string outputPath,
-            double? minArea = null)  // ⭐ 新增参数
+            double? minArea = null)
         {
             try
             {
-                _minArea = minArea;  // ⭐ 保存参数
+                _minArea = minArea;
                 
                 System.Diagnostics.Debug.WriteLine("========== 评分计算开始 ==========");
                 
                 // 1. 计算加权求和得到评分栅格
                 string ratingRasterPath = await CalculateWeightedSum(rasterPaths, weights);
                 System.Diagnostics.Debug.WriteLine($"✅ 评分栅格已生成: {Path.GetFileName(ratingRasterPath)}");
-                System.Diagnostics.Debug.WriteLine($"⚠️ 注意: 评分栅格为中间文件,不会显示在地图中");
 
                 // 2. 将评分栅格转换为矢量
                 string ratingVectorPath = await ConvertToVector(ratingRasterPath);
@@ -54,11 +53,14 @@ namespace HK_AREA_SEARCH.Rating
                 // 3. 与可建设土地进行相交分析
                 string resultPath = await IntersectWithSuitableArea(ratingVectorPath, suitableAreaPath, outputPath);
                 System.Diagnostics.Debug.WriteLine($"✅ 相交分析完成: {Path.GetFileName(resultPath)}");
+
+                // ⭐ 4. 提取单因子评分到结果 (新增步骤)
+                resultPath = await ExtractFactorScores(resultPath, rasterPaths);
+                System.Diagnostics.Debug.WriteLine($"✅ 单因子评分已提取完成");
                 
                 System.Diagnostics.Debug.WriteLine("========== 评分计算完成 ==========");
                 
                 return resultPath;
-
             }
             catch (Exception ex)
             {
@@ -66,31 +68,31 @@ namespace HK_AREA_SEARCH.Rating
             }
         }
 
-        /// <summary>
-        /// 计算加权求和
-        /// </summary>
         private async Task<string> CalculateWeightedSum(Dictionary<string, string> rasterPaths, Dictionary<string, double> weights)
         {
             var calculator = new RasterCalculator(_tempFileManager);
             return await calculator.WeightedSumAsync(rasterPaths, weights);
         }
 
-        /// <summary>
-        /// 转换为矢量
-        /// </summary>
         private async Task<string> ConvertToVector(string inputRasterPath)
         {
             var converter = new RasterToVectorConverter(_tempFileManager);
             return await converter.ConvertAsync(inputRasterPath);
         }
 
-        /// <summary>
-        /// 与可建设土地相交
-        /// </summary>
         private async Task<string> IntersectWithSuitableArea(string ratingVectorPath, string suitableAreaPath, string outputPath)
         {
             var analyzer = new IntersectionAnalyzer(_tempFileManager);
-            return await analyzer.IntersectAsync(ratingVectorPath, suitableAreaPath, outputPath, _minArea);  // ⭐ 传递参数
+            return await analyzer.IntersectAsync(ratingVectorPath, suitableAreaPath, outputPath, _minArea);
+        }
+
+        /// <summary>
+        /// ⭐ 新增: 提取单因子评分到结果要素
+        /// </summary>
+        private async Task<string> ExtractFactorScores(string resultPath, Dictionary<string, string> rasterPaths)
+        {
+            var extractor = new FactorScoreExtractor(_tempFileManager);
+            return await extractor.ExtractToFeaturesAsync(resultPath, rasterPaths);
         }
     }
 }

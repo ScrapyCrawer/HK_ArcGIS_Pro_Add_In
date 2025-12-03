@@ -55,7 +55,7 @@ namespace HK_AREA_SEARCH {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/HK_AREA_SEARCH;V1.0.0.0;component/main_dockpane.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/HK_AREA_SEARCH;component/main_dockpane.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\main_dockpane.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);
