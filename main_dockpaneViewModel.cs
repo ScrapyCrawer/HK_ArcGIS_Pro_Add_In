@@ -113,7 +113,6 @@ namespace HK_AREA_SEARCH
             get { return _maxArea; }
             set 
             { 
-                // ⭐ 验证输入
                 if (value.HasValue && value.Value <= 0)
                 {
                     MessageBox.Show("Maximum area must be greater than 0", "Invalid Input");
@@ -130,6 +129,69 @@ namespace HK_AREA_SEARCH
             }
         }
 
+        // ⭐ 添加地块详情属性
+        #region 地块详情属性
+
+        private int _selectedTabIndex;
+        public int SelectedTabIndex
+        {
+            get { return _selectedTabIndex; }
+            set { SetProperty(ref _selectedTabIndex, value, () => SelectedTabIndex); }
+        }
+
+        private ObservableCollection<FactorScoreItem> _factorScores;
+        public ObservableCollection<FactorScoreItem> FactorScores
+        {
+            get { return _factorScores; }
+            set { SetProperty(ref _factorScores, value, () => FactorScores); }
+        }
+
+        private string _plotDescription;
+        public string PlotDescription
+        {
+            get { return _plotDescription; }
+            set { SetProperty(ref _plotDescription, value, () => PlotDescription); }
+        }
+
+        private PlotInfo _selectedPlotInfo;
+        public PlotInfo SelectedPlotInfo
+        {
+            get { return _selectedPlotInfo; }
+            set { SetProperty(ref _selectedPlotInfo, value, () => SelectedPlotInfo); }
+        }
+
+        private string _resultShapefilePath;
+        public string ResultShapefilePath
+        {
+            get { return _resultShapefilePath; }
+            set 
+            { 
+                SetProperty(ref _resultShapefilePath, value, () => ResultShapefilePath);
+                
+                // 通知 ResultShapefileName 也改变了
+                NotifyPropertyChanged(() => ResultShapefileName);
+                
+                if (!string.IsNullOrEmpty(value))
+                {
+                    System.Diagnostics.Debug.WriteLine($"✅ Result Shapefile Path set: {value}");
+                    SelectedTabIndex = 1;
+                }
+            }
+        }
+
+        public string ResultShapefileName
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(ResultShapefilePath))
+                    return string.Empty;
+                
+                return System.IO.Path.GetFileName(ResultShapefilePath);
+            }
+        }
+
+        #endregion
+
         #endregion
 
         #region 命令
@@ -141,6 +203,7 @@ namespace HK_AREA_SEARCH
         public ICommand RunAnalysisCommand { get; private set; }
         public ICommand ClearConstraintsCommand { get; private set; }
         public ICommand ClearPOIsCommand { get; private set; }
+        public ICommand BrowseResultShapefileCommand { get; private set; }  // ⭐ 添加命令
 
         #endregion
 
@@ -170,6 +233,7 @@ namespace HK_AREA_SEARCH
             RunAnalysisCommand = new RelayCommand(async (param) => await RunAnalysisAsync(param), CanRunAnalysis);
             ClearConstraintsCommand = new RelayCommand(ClearConstraints, (object parameter) => true);
             ClearPOIsCommand = new RelayCommand(ClearPOIs, (object parameter) => true);
+            BrowseResultShapefileCommand = new RelayCommand(BrowseResultShapefile, (object parameter) => true);  // ⭐ 初始化命令
         }
 
         #endregion
@@ -681,6 +745,35 @@ namespace HK_AREA_SEARCH
         }
 
         #endregion
+
+        /// <summary>
+        /// 浏览结果 Shapefile
+        /// </summary>
+        private void BrowseResultShapefile(object parameter) 
+        {
+            try
+            {
+                var dialog = new OpenFileDialog
+                {
+                    Filter = "Shapefile (*.shp)|*.shp|All Files (*.*)|*.*",
+                    Title = "Select Result Shapefile"
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    ResultShapefilePath = dialog.FileName;
+                    System.Diagnostics.Debug.WriteLine($"✅ Selected Result Shapefile: {ResultShapefilePath}");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"❌ BrowseResultShapefile failed: {ex.Message}");
+                MessageBox.Show($"Failed to load shapefile: {ex.Message}",
+                               "Error",
+                               System.Windows.MessageBoxButton.OK,
+                               System.Windows.MessageBoxImage.Error);
+            }
+        }
 
         #region DockPane方法
 

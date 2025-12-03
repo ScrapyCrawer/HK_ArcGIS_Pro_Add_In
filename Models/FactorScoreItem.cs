@@ -3,7 +3,7 @@ using ArcGIS.Desktop.Framework.Contracts;
 namespace HK_AREA_SEARCH.Models
 {
     /// <summary>
-    /// 单因子得分项（用于柱状图绑定）
+    /// 单因子得分项
     /// </summary>
     public class FactorScoreItem : PropertyChangedBase
     {

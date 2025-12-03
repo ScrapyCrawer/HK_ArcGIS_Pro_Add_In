@@ -11,7 +11,7 @@
              d:DesignHeight="700" d:DesignWidth="850"
              d:DataContext="{Binding Path=ui.main_dockpaneViewModel}"
              AllowDrop="True"
-             FontFamily="Microsoft YaHei"> <!-- ⭐ 添加 FontFamily="Microsoft YaHei" -->
+             FontFamily="Microsoft YaHei">
 
     <UserControl.Resources>
         <ResourceDictionary>
@@ -28,7 +28,6 @@
                 <Setter Property="FontWeight" Value="Bold"/>
                 <Setter Property="Margin" Value="0,10,0,5"/>
                 <Setter Property="FontFamily" Value="Microsoft YaHei"/>
-                <!-- ⭐ 确保标题也使用微软雅黑 -->
             </Style>
 
             <Style x:Key="FolderButtonStyle" TargetType="Button">
@@ -38,7 +37,13 @@
                 <Setter Property="Content" Value="📁"/>
                 <Setter Property="FontSize" Value="14"/>
                 <Setter Property="FontFamily" Value="Microsoft YaHei"/>
-                <!-- ⭐ 按钮字体 -->
+            </Style>
+
+            <!-- ⭐ Tab Header 样式 -->
+            <Style x:Key="TabHeaderStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="FontFamily" Value="Microsoft YaHei"/>
             </Style>
         </ResourceDictionary>
     </UserControl.Resources>
@@ -49,337 +54,557 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- 标题 -->
-        <TextBlock Grid.Row="0"
-                   Text="Hong Kong Site Selection Tool"
-                   Style="{DynamicResource Esri_TextBlockDockPaneHeader}"
-                   FontSize="18"
-                   FontFamily="Microsoft YaHei"
-                   HorizontalAlignment="Center"
-                   Margin="0,0,0,10"/>
+        <!-- 标题栏（包含开启/关闭 Plot Details Tab 的按钮） -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-        <!-- 主内容区域 -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel>
+            <!-- 标题 -->
+            <TextBlock Grid.Column="0"
+                       Text="Hong Kong Site Selection Tool"
+                       Style="{DynamicResource Esri_TextBlockDockPaneHeader}"
+                       FontSize="18"
+                       FontFamily="Microsoft YaHei"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,10"/>
 
-                <!-- 1. 约束条件部分 - 添加面积筛选控件 -->
-                <TextBlock Text="Constraints" Style="{StaticResource SectionHeaderStyle}"/>
-                <Border BorderBrush="Gray" BorderThickness="1" Padding="10" Margin="0,5,0,10">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>  <!-- ⭐ 新增：面积筛选行 -->
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
+        </Grid>
 
-                        <!-- 标题行（带 Clear 按钮） -->
-                        <Grid Grid.Row="0" Margin="0,0,0,5">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            
-                            <TextBlock Grid.Column="0" 
-                                       Text="Input Features" 
-                                       FontWeight="Bold" 
-                                       VerticalAlignment="Center"/>
-                            
-                            <!-- ⭐ Clear 按钮 -->
-                            <Button Grid.Column="1"
-                                    Content="🗑 Clear All"
-                                    FontSize="11"
-                                    FontFamily="Microsoft YaHei"
-                                    Padding="8,3"
-                                    Command="{Binding ClearConstraintsCommand}"
-                                    Background="#FFF0F0F0"
-                                    BorderBrush="#FFCCCCCC"
-                                    ToolTip="Clear all constraint items"/>
-                        </Grid>
+        <!-- ⭐ TabControl 主内容区域 -->
+        <TabControl Grid.Row="1" 
+                    x:Name="MainTabControl"
+                    SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
+                    Background="{x:Null}">
 
-                        <!-- 面积筛选控件 -->
-                        <Grid Grid.Row="1" Margin="0,5,0,10" Background="#FFF9F9F9">
+            <!-- ============================================ -->
+            <!-- Tab 1: 分析界面（原有内容） -->
+            <!-- ============================================ -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🔍 " FontSize="14"/>
+                        <TextBlock Text="Analysis" Style="{StaticResource TabHeaderStyle}"/>
+                    </StackPanel>
+                </TabItem.Header>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+
+                        <!-- 1. 约束条件部分 -->
+                        <TextBlock Text="Constraints" Style="{StaticResource SectionHeaderStyle}"/>
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" Margin="0,5,0,10">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <Grid Grid.Row="0" Margin="0,0,0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0" 
+                                               Text="Input Features" 
+                                               FontWeight="Bold" 
+                                               VerticalAlignment="Center"/>
+
+                                    <Button Grid.Column="1"
+                                            Content="🗑 Clear All"
+                                            FontSize="11"
+                                            FontFamily="Microsoft YaHei"
+                                            Padding="8,3"
+                                            Command="{Binding ClearConstraintsCommand}"
+                                            Background="#FFF0F0F0"
+                                            BorderBrush="#FFCCCCCC"
+                                            ToolTip="Clear all constraint items"/>
+                                </Grid>
+
+                                <Grid Grid.Row="1" Margin="0,5,0,10" Background="#FFF9F9F9">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <CheckBox Grid.Row="0" 
+                                              Content="Enable Area Filter"
+                                              IsChecked="{Binding EnableAreaFilter, Mode=TwoWay}"
+                                              FontWeight="Bold"
+                                              Margin="5"
+                                              ToolTip="Filter parcels by area range"/>
+
+                                    <Grid Grid.Row="1" 
+                                          Margin="20,0,5,5"
+                                          IsEnabled="{Binding EnableAreaFilter}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0" 
+                                                   Text="Min(m²):" 
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,5,0"/>
+                                        <TextBox Grid.Column="1"
+                                                 Text="{Binding MinArea, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2, TargetNullValue=''}"
+                                                 VerticalContentAlignment="Center"
+                                                 HorizontalContentAlignment="Right"
+                                                 ToolTip="Minimum area in square meters"
+                                                 Margin="0,0,10,0"/>
+
+                                        <TextBlock Grid.Column="2" 
+                                                   Text="Max(m²):" 
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,5,0"/>
+                                        <TextBox Grid.Column="3"
+                                                 Text="{Binding MaxArea, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2, TargetNullValue=''}"
+                                                 VerticalContentAlignment="Center"
+                                                 HorizontalContentAlignment="Right"
+                                                 ToolTip="Maximum area in square meters"/>
+
+                                        <TextBlock Grid.Column="4"
+                                                   Text="ℹ"
+                                                   FontSize="14"
+                                                   Foreground="Blue"
+                                                   VerticalAlignment="Center"
+                                                   Margin="5,0,0,0"
+                                                   ToolTip="Supports decimal values"/>
+                                    </Grid>
+                                </Grid>
+
+                                <Grid Grid.Row="2" Margin="0,0,0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="40"/>
+                                    </Grid.ColumnDefinitions>
+                                </Grid>
+
+                                <ItemsControl Grid.Row="3" ItemsSource="{Binding ConstraintItems}" MaxHeight="200">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="100"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <TextBlock Grid.Column="0" Text="▼" VerticalAlignment="Center" Margin="5,0"/>
+
+                                                <TextBox Grid.Column="1"
+                                                         Text="{Binding DataName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                         IsReadOnly="True"
+                                                         Background="White"
+                                                         VerticalContentAlignment="Center"
+                                                         AllowDrop="True"
+                                                         PreviewDragOver="ConstraintItem_PreviewDragOver"
+                                                         Drop="ConstraintItem_Drop"
+                                                         Margin="2,0"/>
+
+                                                <Button Grid.Column="2"
+                                                        Style="{StaticResource FolderButtonStyle}"
+                                                        Command="{Binding DataContext.BrowseConstraintCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Grid>
+                        </Border>
+
+                        <!-- 2. 地区部分 -->
+                        <TextBlock Text="Region" Style="{StaticResource SectionHeaderStyle}"/>
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" Margin="0,5,0,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="40"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Analysis Area" VerticalAlignment="Center" Margin="5,0"/>
+                                <TextBox Grid.Column="1"
+                                         Text="{Binding AnalysisAreaPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         VerticalContentAlignment="Center"
+                                         Margin="5,0"
+                                         AllowDrop="True"
+                                         PreviewDragOver="AnalysisArea_PreviewDragOver"
+                                         Drop="AnalysisArea_Drop"/>
+                                <Button Grid.Column="2"
+                                        Style="{StaticResource FolderButtonStyle}"
+                                        Command="{Binding BrowseAnalysisAreaCommand}"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- 3. POI部分 -->
+                        <TextBlock Text="POI" Style="{StaticResource SectionHeaderStyle}"/>
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" Margin="0,5,0,10">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0" 
+                                               Text="Point of Interest Data" 
+                                               FontWeight="Bold" 
+                                               VerticalAlignment="Center"/>
+
+                                    <Button Grid.Column="1"
+                                            Content="🗑 Clear All"
+                                            FontSize="11"
+                                            FontFamily="Microsoft YaHei"
+                                            Padding="8,3"
+                                            Command="{Binding ClearPOIsCommand}"
+                                            Background="#FFF0F0F0"
+                                            BorderBrush="#FFCCCCCC"
+                                            ToolTip="Clear all POI items"/>
+                                </Grid>
+
+                                <DataGrid ItemsSource="{Binding POIItems}"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          CanUserDeleteRows="True"
+                                          CanUserReorderColumns="False"
+                                          CanUserSortColumns="False"
+                                          HeadersVisibility="Column"
+                                          GridLinesVisibility="All"
+                                          MaxHeight="250"
+                                          VerticalScrollBarVisibility="Auto">
+
+                                    <DataGrid.Columns>
+                                        <DataGridTemplateColumn Header="Input Data" Width="2*">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="30"/>
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <TextBox Grid.Column="0"
+                                                                 Text="{Binding DataName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                 IsReadOnly="True"
+                                                                 VerticalContentAlignment="Center"
+                                                                 AllowDrop="True"
+                                                                 PreviewDragOver="POIItem_PreviewDragOver"
+                                                                 Drop="POIItem_Drop"/>
+
+                                                        <Button Grid.Column="1"
+                                                                Content="📁"
+                                                                FontSize="12"
+                                                                Width="25"
+                                                                Height="22"
+                                                                Command="{Binding DataContext.BrowsePOICommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+
+                                        <DataGridTemplateColumn Header="Distance" Width="*">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBox Text="{Binding Distance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                             IsEnabled="{Binding IsDistanceEnabled}"
+                                                             VerticalContentAlignment="Center"
+                                                             HorizontalContentAlignment="Right"/>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+
+                                        <DataGridTemplateColumn Header="Weight" Width="*">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBox Text="{Binding Weight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
+                                                             VerticalContentAlignment="Center"
+                                                             HorizontalContentAlignment="Right"/>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+
+                                        <DataGridTemplateColumn Header="Custom Interval" Width="1.5*">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <ComboBox SelectedValue="{Binding Path=CustomInterval, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                              SelectedValuePath="Tag"
+                                                              VerticalContentAlignment="Center">
+                                                        <ComboBoxItem Content="No" Tag="False"/>
+                                                        <ComboBoxItem Content="Yes" Tag="True"/>
+                                                    </ComboBox>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="{Binding WeightSumValidationMessage}"
+                                   Foreground="Red"
+                                   FontSize="12"
+                                   Margin="0,0,0,10"
+                                   Visibility="{Binding IsWeightSumValid, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                        <!-- 4. 输出部分 -->
+                        <TextBlock Text="Output" Style="{StaticResource SectionHeaderStyle}"/>
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" Margin="0,5,0,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="40"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Output Features" VerticalAlignment="Center" Margin="5,0"/>
+                                <TextBox Grid.Column="1"
+                                         Text="{Binding OutputPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         VerticalContentAlignment="Center"
+                                         Margin="5,0"/>
+                                <Button Grid.Column="2"
+                                        Style="{StaticResource FolderButtonStyle}"
+                                        Command="{Binding BrowseOutputCommand}"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- 5. 运行按钮 -->
+                        <Button Content="▶ Run"
+                                HorizontalAlignment="Right"
+                                Width="100"
+                                Height="35"
+                                FontSize="14"
+                                FontFamily="Microsoft YaHei"
+                                Margin="0,10,0,0"
+                                Command="{Binding RunAnalysisCommand}"
+                                Style="{DynamicResource Esri_Button}"/>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ============================================ -->
+            <!-- ⭐ Tab 2: Plot Details（修复后） -->
+            <!-- ============================================ -->
+            <TabItem x:Name="PlotDetailsTabItem">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="📊 " FontSize="14"/>
+                        <TextBlock Text="Plot Details" Style="{StaticResource TabHeaderStyle}"/>
+                    </StackPanel>
+                </TabItem.Header>
+
+                <Grid Margin="5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>  <!-- ⭐ 新增：输入区域 -->
+                        <RowDefinition Height="2*"/>    <!-- 上半部分：表格 -->
+                        <RowDefinition Height="*"/>     <!-- 下半部分：文字描述 -->
+                    </Grid.RowDefinitions>
+
+                    <!-- ============================================ -->
+                    <!-- ⭐ 新增：SHP 文件输入区域 -->
+                    <!-- ============================================ -->
+                    <Border Grid.Row="0" 
+                            BorderBrush="Black" 
+                            BorderThickness="2" 
+                            CornerRadius="5"
+                            Padding="10"
+                            Margin="0,0,0,10">
+                        <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <!-- 启用面积筛选开关 -->
-                            <CheckBox Grid.Row="0" 
-                                      Content="Enable Area Filter"
-                                      IsChecked="{Binding EnableAreaFilter, Mode=TwoWay}"
-                                      FontWeight="Bold"
-                                      Margin="5"
-                                      ToolTip="Filter parcels by area range"/>
+                            <!-- 标题 -->
+                            <TextBlock Grid.Row="0" 
+                                       Text="📁 Select Result Shapefile" 
+                                       FontSize="13" 
+                                       FontWeight="Bold" 
+                                       Margin="0,0,0,8"
+                                       FontFamily="Microsoft YaHei"/>
 
-                            <!-- 面积范围输入 -->
-                            <Grid Grid.Row="1" 
-                                  Margin="20,0,5,5"
-                                  IsEnabled="{Binding EnableAreaFilter}">
+                            <!-- 输入框和浏览按钮 -->
+                            <Grid Grid.Row="1">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
 
-                                <!-- 最小面积 -->
-                                <TextBlock Grid.Column="0" 
-                                           Text="Min(m²):" 
-                                           VerticalAlignment="Center"
-                                           Margin="0,0,5,0"/>
-                                <TextBox Grid.Column="1"
-                                         Text="{Binding MinArea, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2, TargetNullValue=''}"
+                                <!-- 文件路径输入框 -->
+                                <TextBox Grid.Column="0"
+                                         Text="{Binding ResultShapefilePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          VerticalContentAlignment="Center"
-                                         HorizontalContentAlignment="Right"
-                                         ToolTip="Minimum area in square meters (supports 2 decimal places, leave empty for no limit)"
+                                         Padding="5"
+                                         FontSize="12"
                                          Margin="0,0,10,0"/>
 
-                                <!-- 最大面积 -->
-                                <TextBlock Grid.Column="2" 
-                                           Text="Max(m²):" 
-                                           VerticalAlignment="Center"
-                                           Margin="0,0,5,0"/>
-                                <TextBox Grid.Column="3"
-                                         Text="{Binding MaxArea, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2, TargetNullValue=''}"
-                                         VerticalContentAlignment="Center"
-                                         HorizontalContentAlignment="Right"
-                                         ToolTip="Maximum area in square meters (supports 2 decimal places, leave empty for no limit)"/>
-
-                                <!-- 提示图标 -->
-                                <TextBlock Grid.Column="4"
-                                           Text="ℹ"
-                                           FontSize="14"
-                                           Foreground="Blue"
-                                           VerticalAlignment="Center"
-                                           Margin="5,0,0,0"
-                                           ToolTip="Supports decimal values (e.g., 300.50). Leave empty for no limit."/>
+                                <!-- 浏览按钮 -->
+                                <Button Grid.Column="1"
+                                        Content="📁 Browse"
+                                        FontSize="12"
+                                        FontFamily="Microsoft YaHei"
+                                        Padding="10,5"
+                                        Command="{Binding BrowseResultShapefileCommand}"
+                                        Background="#FF1E90FF"
+                                        Foreground="White"
+                                        BorderBrush="#FF1E90FF"
+                                        ToolTip="Browse for result shapefile">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Cursor" Value="Hand"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#FF4A9FFF"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                             </Grid>
                         </Grid>
+                    </Border>
 
-                        <!-- 列标题行 -->
-                        <Grid Grid.Row="2" Margin="0,0,0,5">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="40"/>
-                            </Grid.ColumnDefinitions>
+                    <!-- ============================================ -->
+                    <!-- 上半部分：单因子得分表格 -->
+                    <!-- ============================================ -->
+                    <Border Grid.Row="1" 
+                            BorderBrush="Black" 
+                            BorderThickness="2" 
+                            CornerRadius="5"
+                            Margin="0,0,0,10">
+                        <!-- 表格内容保持不变 -->
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" 
+                                    CornerRadius="3,3,0,0"
+                                    Padding="10,5">
+                                <TextBlock Text="📊 Factor Scores" 
+                                           FontSize="14" 
+                                           FontWeight="Bold" 
+                                           FontFamily="Microsoft YaHei"/>  <!-- ✅ 删除了 Foreground="Black" -->
+                            </Border>
+
+                            <DataGrid Grid.Row="1" 
+                                      ItemsSource="{Binding FactorScores}"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      CanUserAddRows="False"
+                                      CanUserDeleteRows="False"
+                                      CanUserReorderColumns="False"
+                                      CanUserResizeRows="False"
+                                      CanUserSortColumns="True"
+                                      HeadersVisibility="Column"
+                                      GridLinesVisibility="All"
+                                      AlternatingRowBackground="#FFF5F5F5"
+                                      RowBackground="White"
+                                      Margin="5"
+                                      FontFamily="Microsoft YaHei"
+                                      FontSize="12">
+
+                                <DataGrid.Columns>
+                                    <!-- 因子名称列 -->
+                                    <DataGridTextColumn Header="Factor Name" 
+                                                        Width="2*"
+                                                        Binding="{Binding DisplayName}">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                                <Setter Property="Padding" Value="10,5"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+
+                                    <!-- 得分列 -->
+                                    <DataGridTextColumn Header="Score (out of 10)" 
+                                                        Width="*"
+                                                        Binding="{Binding Score, StringFormat=F2}">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                                <Setter Property="FontWeight" Value="Bold"/>
+                                                <Setter Property="FontSize" Value="14"/>
+                                                <Setter Property="Foreground" Value="#FF1E90FF"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
                         </Grid>
+                    </Border>
 
-                        <!-- 约束条件列表 -->
-                        <ItemsControl Grid.Row="3" ItemsSource="{Binding ConstraintItems}" MaxHeight="200">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid Margin="0,2">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="100"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="40"/>
-                                        </Grid.ColumnDefinitions>
+                    <!-- ============================================ -->
+                    <!-- 下半部分：文字描述（保持不变） -->
+                    <!-- ============================================ -->
+                    <Border Grid.Row="2" 
+                            BorderBrush="Black" 
+                            BorderThickness="2" 
+                            CornerRadius="5">
+                        <!-- 内容保持不变 -->
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
 
-                                        <!-- 下拉图标（装饰用） -->
-                                        <TextBlock Grid.Column="0" Text="▼" VerticalAlignment="Center" Margin="5,0"/>
+                            <Border Grid.Row="0" 
+                                    CornerRadius="3,3,0,0"
+                                    Padding="10,5">
+                                <TextBlock Text="📝 Plot Analysis Report" 
+                                           FontSize="14" 
+                                           FontWeight="Bold" 
+                                           FontFamily="Microsoft YaHei"/> 
+                            </Border>
 
-                                        <!-- 数据名称显示 -->
-                                        <TextBox Grid.Column="1"
-                                                 Text="{Binding DataName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 IsReadOnly="True"
-                                                 Background="White"
-                                                 VerticalContentAlignment="Center"
-                                                 AllowDrop="True"
-                                                 PreviewDragOver="ConstraintItem_PreviewDragOver"
-                                                 Drop="ConstraintItem_Drop"
-                                                 Margin="2,0"/>
-
-                                        <!-- 文件夹按钮 -->
-                                        <Button Grid.Column="2"
-                                                Style="{StaticResource FolderButtonStyle}"
-                                                Command="{Binding DataContext.BrowseConstraintCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}"/>
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </Grid>
-                </Border>
-
-                <!-- 2. 地区部分 -->
-                <TextBlock Text="Region" Style="{StaticResource SectionHeaderStyle}"/>
-                <Border BorderBrush="Gray" BorderThickness="1" Padding="10" Margin="0,5,0,10">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="40"/>
-                        </Grid.ColumnDefinitions>
-
-                        <TextBlock Grid.Column="0" Text="Analysis Area" VerticalAlignment="Center" Margin="5,0"/>
-                        <TextBox Grid.Column="1"
-                                 Text="{Binding AnalysisAreaPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 VerticalContentAlignment="Center"
-                                 Margin="5,0"
-                                 AllowDrop="True"
-                                 PreviewDragOver="AnalysisArea_PreviewDragOver"
-                                 Drop="AnalysisArea_Drop"/>
-                        <Button Grid.Column="2"
-                                Style="{StaticResource FolderButtonStyle}"
-                                Command="{Binding BrowseAnalysisAreaCommand}"/>
-                    </Grid>
-                </Border>
-
-                <!-- 3. POI部分 -->
-                <TextBlock Text="POI" Style="{StaticResource SectionHeaderStyle}"/>
-                <Border BorderBrush="Gray" BorderThickness="1" Padding="10" Margin="0,5,0,10">
-                    <StackPanel>
-                        <!-- ⭐ 新增：POI Clear 按钮 -->
-                        <Grid Margin="0,0,0,5">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            
-                            <TextBlock Grid.Column="0" 
-                                       Text="Point of Interest Data" 
-                                       FontWeight="Bold" 
-                                       VerticalAlignment="Center"/>
-                            
-                            <!--  Clear 按钮 -->
-                            <Button Grid.Column="1"
-                                    Content="🗑 Clear All"
-                                    FontSize="11"
-                                    FontFamily="Microsoft YaHei"
-                                    Padding="8,3"
-                                    Command="{Binding ClearPOIsCommand}"
-                                    Background="#FFF0F0F0"
-                                    BorderBrush="#FFCCCCCC"
-                                    ToolTip="Clear all POI items"/>
+                            <ScrollViewer Grid.Row="1" 
+                                          VerticalScrollBarVisibility="Auto"
+                                          Padding="15">
+                                <TextBlock Text="{Binding PlotDescription}" 
+                                           TextWrapping="Wrap"
+                                           FontSize="13"
+                                           LineHeight="22"
+                                           FontFamily="Consolas"
+                                           Foreground="#FF333333">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding PlotDescription}" Value="{x:Null}">
+                                                    <Setter Property="Text" Value="ℹ️ Please select a plot on the map to view details."/>
+                                                    <Setter Property="Foreground" Value="Gray"/>
+                                                    <Setter Property="FontStyle" Value="Italic"/>
+                                                    <Setter Property="FontFamily" Value="Microsoft YaHei"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding PlotDescription}" Value="">
+                                                    <Setter Property="Text" Value="ℹ️ Please select a plot on the map to view details."/>
+                                                    <Setter Property="Foreground" Value="Gray"/>
+                                                    <Setter Property="FontStyle" Value="Italic"/>
+                                                    <Setter Property="FontFamily" Value="Microsoft YaHei"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </ScrollViewer>
                         </Grid>
-                        
-                        <!-- POI DataGrid -->
-                        <DataGrid ItemsSource="{Binding POIItems}"
-                                  AutoGenerateColumns="False"
-                                  CanUserAddRows="False"
-                                  CanUserDeleteRows="True"
-                                  CanUserReorderColumns="False"
-                                  CanUserSortColumns="False"
-                                  HeadersVisibility="Column"
-                                  GridLinesVisibility="All"
-                                  MaxHeight="250"
-                                  VerticalScrollBarVisibility="Auto">
+                    </Border>
+                </Grid>
+            </TabItem>
 
-                            <DataGrid.Columns>
-                                <!-- 输入数据列 -->
-                                <DataGridTemplateColumn Header="Input Data" Width="2*">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="30"/>
-                                                </Grid.ColumnDefinitions>
-
-                                                <TextBox Grid.Column="0"
-                                                         Text="{Binding DataName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                         IsReadOnly="True"
-                                                         VerticalContentAlignment="Center"
-                                                         AllowDrop="True"
-                                                         PreviewDragOver="POIItem_PreviewDragOver"
-                                                         Drop="POIItem_Drop"/>
-
-                                                <Button Grid.Column="1"
-                                                        Content="📁"
-                                                        FontSize="12"
-                                                        Width="25"
-                                                        Height="22"
-                                                        Command="{Binding DataContext.BrowsePOICommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                        CommandParameter="{Binding}"/>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-
-                                <!-- 距离列 -->
-                                <DataGridTemplateColumn Header="Distance" Width="*">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBox Text="{Binding Distance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                     IsEnabled="{Binding IsDistanceEnabled}"
-                                                     VerticalContentAlignment="Center"
-                                                     HorizontalContentAlignment="Right"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-
-                                <!-- 权重列 -->
-                                <DataGridTemplateColumn Header="Weight" Width="*">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBox Text="{Binding Weight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
-                                                     VerticalContentAlignment="Center"
-                                                     HorizontalContentAlignment="Right"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-
-                                <!-- 自定义距离间隔列 -->
-                                <DataGridTemplateColumn Header="Custom Interval" Width="1.5*">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <ComboBox SelectedValue="{Binding Path=CustomInterval, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                      SelectedValuePath="Tag"
-                                                      VerticalContentAlignment="Center">
-                                                <ComboBoxItem Content="No" Tag="False"/>
-                                                <ComboBoxItem Content="Yes" Tag="True"/>
-                                            </ComboBox>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </StackPanel>
-                </Border>
-
-                <!-- 权重验证提示 -->
-                <TextBlock Text="{Binding WeightSumValidationMessage}"
-                           Foreground="Red"
-                           FontSize="12"
-                           Margin="0,0,0,10"
-                           Visibility="{Binding IsWeightSumValid, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-
-                <!-- 4. 输出部分 -->
-                <TextBlock Text="Output" Style="{StaticResource SectionHeaderStyle}"/>
-                <Border BorderBrush="Gray" BorderThickness="1" Padding="10" Margin="0,5,0,10">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="40"/>
-                        </Grid.ColumnDefinitions>
-
-                        <TextBlock Grid.Column="0" Text="Output Features" VerticalAlignment="Center" Margin="5,0"/>
-                        <TextBox Grid.Column="1"
-                                 Text="{Binding OutputPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 VerticalContentAlignment="Center"
-                                 Margin="5,0"/>
-                        <Button Grid.Column="2"
-                                Style="{StaticResource FolderButtonStyle}"
-                                Command="{Binding BrowseOutputCommand}"/>
-                    </Grid>
-                </Border>
-
-                <!-- 5. 运行按钮 -->
-                <Button Content="▶ Run"
-                        HorizontalAlignment="Right"
-                        Width="100"
-                        Height="35"
-                        FontSize="14"
-                        FontFamily="Microsoft YaHei"
-                        Margin="0,10,0,0"
-                        Command="{Binding RunAnalysisCommand}"
-                        Style="{DynamicResource Esri_Button}"/>
-
-            </StackPanel>
-        </ScrollViewer>
+        </TabControl>
     </Grid>
 </UserControl>
