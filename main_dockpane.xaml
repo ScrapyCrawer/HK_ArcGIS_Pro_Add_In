@@ -72,15 +72,13 @@
 
         </Grid>
 
-        <!-- ⭐ TabControl 主内容区域 -->
+        <!--  TabControl 主内容区域 -->
         <TabControl Grid.Row="1" 
                     x:Name="MainTabControl"
                     SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
                     Background="{x:Null}">
 
-            <!-- ============================================ -->
             <!-- Tab 1: 分析界面（原有内容） -->
-            <!-- ============================================ -->
             <TabItem>
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
@@ -392,9 +390,7 @@
                 </ScrollViewer>
             </TabItem>
 
-            <!-- ============================================ -->
-            <!-- ⭐ Tab 2: Plot Details（修复后） -->
-            <!-- ============================================ -->
+            <!--  Tab 2: Plot Details -->
             <TabItem x:Name="PlotDetailsTabItem">
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
@@ -405,14 +401,15 @@
 
                 <Grid Margin="5">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>  <!-- ⭐ 新增：输入区域 -->
-                        <RowDefinition Height="2*"/>    <!-- 上半部分：表格 -->
-                        <RowDefinition Height="*"/>     <!-- 下半部分：文字描述 -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- 输入区域 -->
+                        <RowDefinition Height="2*"/>
+                        <!-- 上半部分：表格 -->
+                        <RowDefinition Height="*"/>
+                        <!-- 下半部分：文字描述 -->
                     </Grid.RowDefinitions>
 
-                    <!-- ============================================ -->
-                    <!-- ⭐ 新增：SHP 文件输入区域 -->
-                    <!-- ============================================ -->
+                    <!-- SHP 文件输入区域 -->
                     <Border Grid.Row="0" 
                             BorderBrush="Black" 
                             BorderThickness="2" 
@@ -474,14 +471,12 @@
                         </Grid>
                     </Border>
 
-                    <!-- ============================================ -->
                     <!-- 上半部分：单因子得分表格 -->
-                    <!-- ============================================ -->
                     <Border Grid.Row="1" 
                             BorderBrush="Black" 
                             BorderThickness="2" 
                             CornerRadius="5"
-                            Margin="0,0,0,10">
+                            Margin="0,0,0,47">
                         <!-- 表格内容保持不变 -->
                         <Grid>
                             <Grid.RowDefinitions>
@@ -507,7 +502,7 @@
                                                FontFamily="Microsoft YaHei"
                                                VerticalAlignment="Center"/>
 
-                                    <!-- ⭐ 浏览地块按钮 -->
+                                    <!--  浏览地块按钮 -->
                                     <Button Grid.Column="1"
                                             Content="{Binding PlotListeningButtonText}"
                                             Command="{Binding TogglePlotListeningCommand}"
@@ -547,7 +542,8 @@
                                       RowBackground="White"
                                       Margin="5"
                                       FontFamily="Microsoft YaHei"
-                                      FontSize="12">
+                                      FontSize="11"
+                                      Background="{x:Null}">
 
                                 <DataGrid.Columns>
                                     <!-- 因子名称列 -->
@@ -557,8 +553,9 @@
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="VerticalAlignment" Value="Center"/>
-                                                <Setter Property="Padding" Value="10,5"/>
-                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                <Setter Property="Padding" Value="8,3"/>
+                                                <Setter Property="FontWeight" Value="Normal"/>
+                                                <Setter Property="FontSize" Value="11"/>
                                             </Style>
                                         </DataGridTextColumn.ElementStyle>
                                     </DataGridTextColumn>
@@ -572,7 +569,7 @@
                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
                                                 <Setter Property="VerticalAlignment" Value="Center"/>
                                                 <Setter Property="FontWeight" Value="Bold"/>
-                                                <Setter Property="FontSize" Value="14"/>
+                                                <Setter Property="FontSize" Value="13"/>
                                                 <Setter Property="Foreground" Value="#FF1E90FF"/>
                                             </Style>
                                         </DataGridTextColumn.ElementStyle>
@@ -582,13 +579,11 @@
                         </Grid>
                     </Border>
 
-                    <!-- ============================================ -->
-                    <!-- 下半部分：文字描述（保持不变） -->
-                    <!-- ============================================ -->
-                    <Border Grid.Row="2" 
+                    <!-- 下半部分：文字描述 -->
+                    <Border Grid.Row="1" 
                             BorderBrush="Black" 
                             BorderThickness="2" 
-                            CornerRadius="5">
+                            CornerRadius="5" Margin="0,304,0,0" Grid.RowSpan="2">
                         <!-- 内容保持不变 -->
                         <Grid>
                             <Grid.RowDefinitions>
@@ -602,37 +597,20 @@
                                 <TextBlock Text="📝 Plot Analysis Report" 
                                            FontSize="14" 
                                            FontWeight="Bold" 
-                                           FontFamily="Microsoft YaHei"/> 
+                                           FontFamily="Microsoft YaHei"/>
                             </Border>
 
                             <ScrollViewer Grid.Row="1" 
                                           VerticalScrollBarVisibility="Auto"
                                           Padding="15">
-                                <TextBlock Text="{Binding PlotDescription}" 
+                                <TextBlock x:Name="PlotDescriptionTextBlock"
+                                           Text="{Binding PlotDescription, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, FallbackValue='Loading...', TargetNullValue='Please select a plot'}" 
                                            TextWrapping="Wrap"
-                                           FontSize="13"
-                                           LineHeight="22"
-                                           FontFamily="Consolas"
-                                           Foreground="#FF333333">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding PlotDescription}" Value="{x:Null}">
-                                                    <Setter Property="Text" Value="ℹ️ Please select a plot on the map to view details."/>
-                                                    <Setter Property="Foreground" Value="Gray"/>
-                                                    <Setter Property="FontStyle" Value="Italic"/>
-                                                    <Setter Property="FontFamily" Value="Microsoft YaHei"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding PlotDescription}" Value="">
-                                                    <Setter Property="Text" Value="ℹ️ Please select a plot on the map to view details."/>
-                                                    <Setter Property="Foreground" Value="Gray"/>
-                                                    <Setter Property="FontStyle" Value="Italic"/>
-                                                    <Setter Property="FontFamily" Value="Microsoft YaHei"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
+                                           FontSize="14"
+                                           FontFamily="Microsoft YaHei"
+                                           Foreground="{DynamicResource Esri_TextControlForeground}"
+                                           Background="Transparent"
+                                           Padding="5"/>
                             </ScrollViewer>
                         </Grid>
                     </Border>

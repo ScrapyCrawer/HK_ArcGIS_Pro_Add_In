@@ -97,7 +97,7 @@ namespace HK_AREA_SEARCH
             get { return _minArea; }
             set 
             { 
-                // ⭐ 验证输入
+                //  验证输入
                 if (value.HasValue && value.Value < 0)
                 {
                     MessageBox.Show("Minimum area cannot be negative", "Invalid Input");
@@ -136,7 +136,7 @@ namespace HK_AREA_SEARCH
             }
         }
 
-        // ⭐ 添加地块详情属性
+        //  添加地块详情属性
         #region 地块详情属性
 
         private int _selectedTabIndex;
@@ -156,8 +156,20 @@ namespace HK_AREA_SEARCH
         private string _plotDescription;
         public string PlotDescription
         {
-            get { return _plotDescription; }
-            set { SetProperty(ref _plotDescription, value, () => PlotDescription); }
+            get 
+            { 
+                return _plotDescription; 
+            }
+            set 
+            { 
+                System.Diagnostics.Debug.WriteLine($">>> PlotDescription setter called");
+                System.Diagnostics.Debug.WriteLine($"    Old value length: {_plotDescription?.Length ?? 0}");
+                System.Diagnostics.Debug.WriteLine($"    New value length: {value?.Length ?? 0}");
+                
+                SetProperty(ref _plotDescription, value, () => PlotDescription);
+                
+                System.Diagnostics.Debug.WriteLine($"    ✅ Property change notified");
+            }
         }
 
         private PlotInfo _selectedPlotInfo;
@@ -447,22 +459,22 @@ namespace HK_AREA_SEARCH
             var dialog = new OpenFileDialog
             {
                 Filter = "Shapefile (*.shp)|*.shp|GeoDatabase Feature Class|*.gdb|All Files (*.*)|*.*",
-                Title = "Select Constraint Data - Hold Ctrl/Shift for Multiple Selection",  // ⭐ 友好提示
+                Title = "Select Constraint Data - Hold Ctrl/Shift for Multiple Selection",  //  友好提示
                 Multiselect = true
             };
 
             if (dialog.ShowDialog() == true)
             {
-                // ⭐ 获取所有选中的文件
+                //  获取所有选中的文件
                 string[] selectedFiles = dialog.FileNames;
 
                 if (selectedFiles.Length == 0)
                     return;
 
-                // ⭐ 第一个文件填入当前行
+                //  第一个文件填入当前行
                 item.DataPath = selectedFiles[0];
 
-                // ⭐ 如果选择了多个文件，添加额外的行
+                // 如果选择了多个文件，添加额外的行
                 if (selectedFiles.Length > 1)
                 {
                     // 找到当前项的索引
@@ -485,7 +497,7 @@ namespace HK_AREA_SEARCH
                             }
                         };
 
-                        // ⭐ 在当前项后面插入新行
+                        //  在当前项后面插入新行
                         ConstraintItems.Insert(currentIndex + i, newItem);
                     }
 
@@ -523,21 +535,21 @@ namespace HK_AREA_SEARCH
             {
                 Filter = "All Supported Formats|*.shp;*.tif;*.tiff;*.img|Shapefile (*.shp)|*.shp|Raster (*.tif;*.tiff;*.img)|*.tif;*.tiff;*.img|All Files (*.*)|*.*",
                 Title = "Select POI Data - Ctrl/Shift for Multiple Selection",
-                Multiselect = true  // ⭐ 启用多选
+                Multiselect = true  //  启用多选
             };
 
             if (dialog.ShowDialog() == true)
             {
-                // ⭐ 获取所有选中的文件
+                //  获取所有选中的文件
                 string[] selectedFiles = dialog.FileNames;
 
                 if (selectedFiles.Length == 0)
                     return;
 
-                // ⭐ 第一个文件填入当前行
+                // 第一个文件填入当前行
                 item.DataPath = selectedFiles[0];
 
-                // ⭐ 如果选择了多个文件，添加额外的行
+                // 如果选择了多个文件，添加额外的行
                 if (selectedFiles.Length > 1)
                 {
                     // 找到当前项的索引
@@ -575,7 +587,7 @@ namespace HK_AREA_SEARCH
                             }
                         };
 
-                        // ⭐ 在当前项后面插入新行
+                        //  在当前项后面插入新行
                         POIItems.Insert(currentIndex + i, newItem);
                     }
 
@@ -1030,7 +1042,10 @@ namespace HK_AREA_SEARCH
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine(">>> Updating plot details UI");
+                System.Diagnostics.Debug.WriteLine("========== Updating Plot Details ==========");
+                System.Diagnostics.Debug.WriteLine($">>> Plot Info - OID: {plotInfo.ObjectID}");
+                System.Diagnostics.Debug.WriteLine($">>> GridCode: {plotInfo.GridCode}");
+                System.Diagnostics.Debug.WriteLine($">>> Factor Scores Count: {plotInfo.FactorScores.Count}");
 
                 // 保存当前地块信息
                 SelectedPlotInfo = plotInfo;
@@ -1048,45 +1063,91 @@ namespace HK_AREA_SEARCH
                     };
                     
                     FactorScores.Add(item);
+                    System.Diagnostics.Debug.WriteLine($"  Added: {item.DisplayName} = {item.Score:F2}");
                 }
 
-                System.Diagnostics.Debug.WriteLine($"Factor scores count: {FactorScores.Count}");
+                System.Diagnostics.Debug.WriteLine($">>> Factor Scores Collection Count: {FactorScores.Count}");
 
                 // 2. 生成文字描述
+                System.Diagnostics.Debug.WriteLine(">>> Calling GeneratePlotDescription...");
                 PlotDescription = GeneratePlotDescription(plotInfo);
+                
+                // 添加调试:检查描述是否生成
+                System.Diagnostics.Debug.WriteLine($">>> PlotDescription Length: {PlotDescription?.Length ?? 0}");
+                System.Diagnostics.Debug.WriteLine($">>> PlotDescription Preview:");
+                if (!string.IsNullOrEmpty(PlotDescription))
+                {
+                    // 打印前 300 个字符
+                    var preview = PlotDescription.Length > 300 ? PlotDescription.Substring(0, 300) + "..." : PlotDescription;
+                    System.Diagnostics.Debug.WriteLine(preview);
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("⚠️⚠️⚠️ PlotDescription is NULL or EMPTY!");
+                }
 
                 // 3. 自动切换到地块详情选项卡
                 SelectedTabIndex = 1;
+                System.Diagnostics.Debug.WriteLine($">>> Switched to Tab Index: {SelectedTabIndex}");
 
-                System.Diagnostics.Debug.WriteLine("✅ Plot details updated");
+                //  强制通知 UI 更新
+                NotifyPropertyChanged(() => PlotDescription);
+                System.Diagnostics.Debug.WriteLine(">>> Forced PlotDescription PropertyChanged notification");
+
+                System.Diagnostics.Debug.WriteLine("========== Plot Details Update Complete ==========");
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"❌ UpdatePlotDetails failed: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"   Stack Trace: {ex.StackTrace}");
             }
         }
 
         /// <summary>
-        /// 生成地块描述文字
+        /// 生成地块描述文字(简化版)
         /// </summary>
         private string GeneratePlotDescription(PlotInfo plotInfo)
         {
             var sb = new StringBuilder();
 
-            sb.AppendLine($"📍 Plot Analysis Report");
-            sb.AppendLine($"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-            sb.AppendLine();
+            // 1. 标题(No need)
 
+            // 2. 综合评分
             sb.AppendLine($"🎯 Overall Score: {plotInfo.GridCode:F2} / 10");
+
+            // 3. 综合评级(根据得分分级显示)
+            string rating, emoji, description;
+            
+            if (plotInfo.GridCode >= 8)
+            {
+                emoji = "🟢";
+                rating = "Excellent (极佳)";
+                description = "This plot is highly suitable for development with outstanding overall conditions.";
+            }
+            else if (plotInfo.GridCode >= 6)
+            {
+                emoji = "🟡";
+                rating = "Good (适宜)";
+                description = "This plot has good development potential with favorable conditions.";
+            }
+            else if (plotInfo.GridCode >= 4)
+            {
+                emoji = "🟠";
+                rating = "Fair (一般)";
+                description = "This plot has moderate suitability with some limitations to consider.";
+            }
+            else
+            {
+                emoji = "🔴";
+                rating = "Poor (较差)";
+                description = "This plot has significant challenges that may affect development feasibility.";
+            }
+            
+            sb.AppendLine($"{emoji} Overall Rating: {rating}");
+            sb.AppendLine($"   {description}");
             sb.AppendLine();
 
-            string rating = plotInfo.GridCode >= 8 ? "Excellent (极佳)" :
-                            plotInfo.GridCode >= 6 ? "Good (适宜)" :
-                            plotInfo.GridCode >= 4 ? "Fair (一般)" :
-                            "Poor (较差)";
-            sb.AppendLine($"📊 Overall Rating: {rating}");
-            sb.AppendLine();
-
+            // 4. 面积信息
             if (plotInfo.Area.HasValue)
             {
                 sb.AppendLine($"📐 Area: {plotInfo.Area.Value:N2} m²");
@@ -1095,31 +1156,53 @@ namespace HK_AREA_SEARCH
 
             if (plotInfo.FactorScores.Count > 0)
             {
-                var orderedScores = plotInfo.FactorScores.OrderByDescending(x => x.Value).ToList();
-                var maxFactor = orderedScores.First();
-                var minFactor = orderedScores.Last();
-
-                sb.AppendLine($"✅ Main Advantages:");
-                sb.AppendLine($"   • {ConvertFactorNameToDisplay(maxFactor.Key)}: {maxFactor.Value:F2} / 10");
-                sb.AppendLine();
-
-                sb.AppendLine($"⚠️ Areas for Attention:");
-                sb.AppendLine($"   • {ConvertFactorNameToDisplay(minFactor.Key)}: {minFactor.Value:F2} / 10");
-                sb.AppendLine();
-
-                sb.AppendLine($"📋 Detailed Scores:");
-                foreach (var score in orderedScores)
+                // 5. 主要优势 (得分 >= 7)
+                var advantages = plotInfo.FactorScores
+                    .Where(f => f.Value >= 7)
+                    .OrderByDescending(f => f.Value)
+                    .ToList();
+                
+                if (advantages.Any())
                 {
-                    string bar = new string('█', (int)(score.Value / 2));
-                    sb.AppendLine($"   • {ConvertFactorNameToDisplay(score.Key),-20} {bar} {score.Value:F2}");
+                    sb.AppendLine($"✅ Main Advantages (Score ≥ 7):");
+                    foreach (var factor in advantages)
+                    {
+                        sb.AppendLine($"   • {ConvertFactorNameToDisplay(factor.Key)}: {factor.Value:F2}");
+                    }
+                    sb.AppendLine();
+                }
+
+                // 6. 主要劣势 (得分 <= 3)
+                var disadvantages = plotInfo.FactorScores
+                    .Where(f => f.Value <= 3)
+                    .OrderBy(f => f.Value)
+                    .ToList();
+                
+                if (disadvantages.Any())
+                {
+                    sb.AppendLine($"⚠️ Main Disadvantages (Score ≤ 3):");
+                    foreach (var factor in disadvantages)
+                    {
+                        sb.AppendLine($"   • {ConvertFactorNameToDisplay(factor.Key)}: {factor.Value:F2}");
+                    }
+                    sb.AppendLine();
+                }
+
+                // 7. 如果没有明显优势或劣势
+                if (!advantages.Any() && !disadvantages.Any())
+                {
+                    sb.AppendLine($"ℹ️ All factors have moderate scores (3-7 range).");
+                    sb.AppendLine($"   This plot shows balanced but not exceptional characteristics.");
+                    sb.AppendLine();
                 }
             }
             else
             {
                 sb.AppendLine("⚠️ No factor score data available.");
+                sb.AppendLine();
             }
 
-            sb.AppendLine();
+            // 8. 时间戳
             sb.AppendLine($"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             sb.AppendLine($"Generated at: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
 
