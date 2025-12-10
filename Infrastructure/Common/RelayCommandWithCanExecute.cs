@@ -1,7 +1,7 @@
 using System;
 using System.Windows.Input;
 
-namespace HK_AREA_SEARCH.Common
+namespace HK_AREA_SEARCH.Infrastructure.Common
 {
     /// <summary>
     /// 支持手动触发CanExecuteChanged事件的RelayCommand

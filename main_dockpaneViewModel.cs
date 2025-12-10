@@ -696,21 +696,26 @@ namespace HK_AREA_SEARCH
                 // 3. 执行模块2: 距离计算
                 ReportProgress("Step 2/4: Calculating distance rasters...", 30);
                 var distanceService = new DistanceService(tempFileManager);
-                var processedRasters = await distanceService.ExecuteAsync(
+
+                // ⭐ 修复: 接收工作副本路径
+                var (processedRasters, workingAreaPath) = await distanceService.ExecuteAsync(
                     POIItems.Where(p => !p.IsEmpty).ToList(),
-                    AnalysisAreaPath
+                    suitableAreaPath
                 );
+
+                System.Diagnostics.Debug.WriteLine($"✅ Distance calculation completed");
+                System.Diagnostics.Debug.WriteLine($"   Working Area Path: {workingAreaPath}");
 
                 // 4. 执行模块3: 评分计算
                 ReportProgress("Step 3/4: Calculating ratings...", 60);
                 var ratingService = new RatingService(tempFileManager);
                 var weights = POIItems.Where(p => !p.IsEmpty)
                     .ToDictionary(p => p.DataName, p => p.Weight.Value);
-                // ⭐ 传递最小面积参数到 RatingService
+                // ⭐ 传递工作副本路径和最小面积参数到 RatingService
                 var resultPath = await ratingService.ExecuteAsync(
                     processedRasters,
                     weights,
-                    suitableAreaPath,
+                    workingAreaPath,  // ⭐ 使用工作副本路径,而不是原始的 suitableAreaPath
                     OutputPath,
                     minAreaFilter  // 传递最小面积参数
                 );

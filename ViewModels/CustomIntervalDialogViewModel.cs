@@ -7,9 +7,14 @@ using System.Windows;
 using System.Windows.Input;
 using ArcGIS.Desktop.Framework.Contracts;
 using HK_AREA_SEARCH.Models;
-using HK_AREA_SEARCH.Common;
+using HK_AREA_SEARCH.Infrastructure.Common;
 using HK_AREA_SEARCH.Infrastructure.Services;
 using HK_AREA_SEARCH.Distance;
+using HK_AREA_SEARCH.Business.Distance;
+using ArcGIS.Core.Data.Raster;
+using ArcGIS.Desktop.Framework.Threading.Tasks;
+using System.IO;
+using HK_AREA_SEARCH.Common;
 
 namespace HK_AREA_SEARCH.ViewModels
 {
@@ -166,10 +171,8 @@ namespace HK_AREA_SEARCH.ViewModels
         {
             try
             {
-                // 获取栅格最小值和最大值
-                var tempFileManager = new TempFileManager();
-                // 由栅格重分类器获取 min/max
-                var reclassifier = new RasterReclassifier(tempFileManager);
+                // ✅ 修复: ScoreConverter 不需要参数
+                var reclassifier = new ScoreConverter();
                 var (rasterMin, rasterMax) = await reclassifier.GetRasterMinMaxAsync(_inputRasterPath);
 
                 // 在UI线程上更新ClassItems

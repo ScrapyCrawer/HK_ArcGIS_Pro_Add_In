@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using HK_AREA_SEARCH.Models;
+using HK_AREA_SEARCH.Common;
 
 namespace HK_AREA_SEARCH.Infrastructure.Helpers
 {
@@ -44,10 +45,10 @@ namespace HK_AREA_SEARCH.Infrastructure.Helpers
         /// </summary>
         /// <param name="dataPath">数据路径</param>
         /// <returns>数据类型</returns>
-        public static Common.DataType ValidateDataType(string dataPath)
+        public static DataType ValidateDataType(string dataPath)
         {
             if (string.IsNullOrWhiteSpace(dataPath))
-                return Common.DataType.Unknown;
+                return DataType.Unknown;
 
             string extension = Path.GetExtension(dataPath)?.ToLower();
 
@@ -56,17 +57,17 @@ namespace HK_AREA_SEARCH.Infrastructure.Helpers
                 extension == ".bil" || extension == ".jpg" || extension == ".jp2" || 
                 extension == ".png" || extension == ".gif")
             {
-                return Common.DataType.Raster;
+                return DataType.Raster;
             }
 
             // 常见的矢量文件扩展名
             if (extension == ".shp" || extension == ".gdb" || extension == ".dbf" || 
                 extension == ".lyr" || extension == ".kml" || extension == ".geojson")
             {
-                return Common.DataType.Vector;
+                return DataType.Vector;
             }
 
-            return Common.DataType.Unknown;
+            return DataType.Unknown;
         }
 
         /// <summary>

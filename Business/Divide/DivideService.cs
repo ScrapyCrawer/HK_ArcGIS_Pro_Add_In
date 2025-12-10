@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using HK_AREA_SEARCH.Infrastructure.Services;
+using ArcGIS.Desktop.Core.Geoprocessing;
+using ArcGIS.Desktop.Framework.Threading.Tasks;
 
 namespace HK_AREA_SEARCH.Divide
 {
@@ -32,23 +34,16 @@ namespace HK_AREA_SEARCH.Divide
             List<string> constraintPaths,
             string outputPath,
             double? minArea = null,
-            double? maxArea = null)  //  最大面积参数
+            double? maxArea = null)
         {
             try
             {
-                // 验证输入数据
                 await ValidateInputs(analysisAreaPath, constraintPaths);
-
-                // 合并约束条件
+                
                 string mergedConstraintsPath = await MergeConstraints(constraintPaths);
-
-                // 执行差集运算 - 可建设土地 = 分析区域 - 约束条件
                 string differenceResultPath = await PerformDifference(analysisAreaPath, mergedConstraintsPath, outputPath);
-
-                // ⭐ 面积过滤 - 传递最小和最大面积参数
                 string filteredResultPath = await FilterByArea(differenceResultPath, minArea, maxArea);
 
-                // 如果输出路径与临时路径不同,复制到最终路径
                 if (filteredResultPath != outputPath)
                 {
                     await CopyToOutputPath(filteredResultPath, outputPath);

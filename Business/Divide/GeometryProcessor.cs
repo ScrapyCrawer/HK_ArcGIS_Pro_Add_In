@@ -76,66 +76,35 @@ namespace HK_AREA_SEARCH.Divide
             {
                 try
                 {
-                    // 使用ArcGIS Pro的Erase工具（分析区域 - 约束条件）
+                    // 使用ArcGIS Pro的Erase工具
                     var environment = Geoprocessing.MakeEnvironmentArray(overwriteoutput: true);
                     var parameters = Geoprocessing.MakeValueArray(inputPath1, inputPath2, outputPath);
 
-                    var result = await Geoprocessing.ExecuteToolAsync("analysis.Erase", parameters, environment, null, null, GPExecuteToolFlags.AddToHistory);
+                    var result = await Geoprocessing.ExecuteToolAsync(
+                        "analysis.Erase", 
+                        parameters, 
+                        environment, 
+                        null, 
+                        null, 
+                        GPExecuteToolFlags.None); 
 
                     if (result.IsFailed)
                     {
-                        // 将错误消息列表转换为字符串
                         string errorMessages = string.Join("; ", result.ErrorMessages);
                         throw new Exception($"差集运算失败: {errorMessages}");
                     }
+
+                    // 执行 Multipart To Singlepart 确保结果一致性
+                    // 如果不需要拆分多部件几何，可以注释掉这段
+                    // string singlepartOutput = outputPath.Replace(".shp", "_single.shp");
+                    // await ConvertMultipartToSinglepart(outputPath, singlepartOutput);
+                    // return singlepartOutput;
 
                     return outputPath;
                 }
                 catch (Exception ex)
                 {
                     throw new Exception($"几何差集运算失败: {ex.Message}", ex);
-                }
-            });
-        }
-
-        /// <summary>
-        /// 简化几何
-        /// </summary>
-        /// <param name="inputPath">输入要素路径</param>
-        /// <param name="outputPath">输出路径</param>
-        /// <param name="tolerance">容差</param>
-        /// <returns>简化后要素路径</returns>
-        public async Task<string> Simplify(string inputPath, string outputPath, double tolerance = 1.0)
-        {
-            return await QueuedTask.Run(async () =>
-            {
-                try
-                {
-                    // 使用ArcGIS Pro的Simplify Polygon工具
-                    var environment = Geoprocessing.MakeEnvironmentArray(overwriteoutput: true);
-                    var parameters = Geoprocessing.MakeValueArray(
-                        inputPath,
-                        outputPath,
-                        "POINT_REMOVE", // 使用点移除算法
-                        tolerance,
-                        "0 Meters", // 最大偏移量
-                        "0 Meters"  // 最大面积
-                    );
-
-                    var result = await Geoprocessing.ExecuteToolAsync("cartography.SimplifyPolygon", parameters, environment, null, null, GPExecuteToolFlags.AddToHistory);
-
-                    if (result.IsFailed)
-                    {
-                        // 将错误消息列表转换为字符串
-                        string errorMessages = string.Join("; ", result.ErrorMessages);
-                        throw new Exception($"几何简化失败: {errorMessages}");
-                    }
-
-                    return outputPath;
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception($"几何简化操作失败: {ex.Message}", ex);
                 }
             });
         }

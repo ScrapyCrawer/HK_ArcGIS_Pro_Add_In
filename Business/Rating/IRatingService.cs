@@ -23,6 +23,6 @@ namespace HK_AREA_SEARCH.Rating
             Dictionary<string, double> weights,
             string suitableAreaPath,
             string outputPath,
-            double? minArea = null);  // 新增参数
+            double? minArea = null); 
     }
 }

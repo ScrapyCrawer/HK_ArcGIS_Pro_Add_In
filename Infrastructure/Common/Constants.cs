@@ -10,7 +10,7 @@ namespace HK_AREA_SEARCH.Common
         public const string RESULT_FILENAME = "Result_Rating_Suitable_Area.shp";
 
         // 字段名常量
-        public const string RATING_FIELD = "gridcode";
+        public const string RATING_FIELD = "Rating";
         public const string VALUE_FIELD = "VALUE";
         public const string AREA_FIELD = "AREA_M2";
 

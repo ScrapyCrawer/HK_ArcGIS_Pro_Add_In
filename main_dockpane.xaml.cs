@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using HK_AREA_SEARCH.Models;
-using HK_AREA_SEARCH.Helpers;
+using HK_AREA_SEARCH.Infrastructure.Helpers;
 
 namespace HK_AREA_SEARCH
 {

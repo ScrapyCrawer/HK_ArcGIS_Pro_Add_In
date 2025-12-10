@@ -107,22 +107,22 @@ namespace HK_AREA_SEARCH.Models
             get => _customInterval;
             set
             {
-                if (_customInterval != value)
+                // ⭐ 移除条件判断，确保每次都触发属性变化通知
+                var oldValue = _customInterval;
+                _customInterval = value;
+                OnPropertyChanged();
+                
+                // 如果从 false 变为 true,重置配置标志
+                if (value && !_customIntervalConfigured)
                 {
-                    _customInterval = value;
-                    OnPropertyChanged();
-                    
-                    // ⭐ 如果从 false 变为 true,重置配置标志
-                    if (value && !_customIntervalConfigured)
-                    {
-                        OnPropertyChanged(nameof(NeedsCustomIntervalDialog));
-                    }
-                    
-                    // ⭐ 如果取消自定义间隔,清除保存的配置
-                    if (!value)
-                    {
-                        _customIntervalClasses = null;
-                    }
+                    OnPropertyChanged(nameof(NeedsCustomIntervalDialog));
+                }
+                
+                // 如果取消自定义间隔,清除保存的配置
+                if (!value)
+                {
+                    _customIntervalClasses = null;
+                    _customIntervalConfigured = false;  // ⭐ 同时重置配置状态
                 }
             }
         }

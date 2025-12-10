@@ -15,7 +15,9 @@ namespace HK_AREA_SEARCH.Distance
         /// </summary>
         /// <param name="poiItems">POI数据项列表</param>
         /// <param name="analysisAreaPath">分析区域路径，用于提取处理范围</param>
-        /// <returns>处理后的栅格路径字典</returns>
-        Task<Dictionary<string, string>> ExecuteAsync(List<POIDataItem> poiItems, string analysisAreaPath = null);
+        /// <returns>(字段名映射, 工作副本路径)</returns>
+        Task<(Dictionary<string, string> fieldNames, string workingAreaPath)> ExecuteAsync(
+            List<POIDataItem> poiItems, 
+            string analysisAreaPath = null);
     }
 }
