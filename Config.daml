@@ -38,7 +38,7 @@
       </controls>
       <dockPanes>
         <dockPane id="HK_AREA_SEARCH_main_dockpane" 
-				  caption="main _dockpane" 
+				  caption="HK Site Selection Toolkit" 
 				  className="main_dockpaneViewModel" 
 				  dock="group" 
 				  dockWith="esri_core_projectDockPane">

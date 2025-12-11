@@ -146,6 +146,15 @@ namespace HK_AREA_SEARCH
             set { SetProperty(ref _selectedTabIndex, value, () => SelectedTabIndex); }
         }
 
+        //  修改: 改为显示所有字段
+        private ObservableCollection<FieldAttributeItem> _featureAttributes;
+        public ObservableCollection<FieldAttributeItem> FeatureAttributes
+        {
+            get { return _featureAttributes; }
+            set { SetProperty(ref _featureAttributes, value, () => FeatureAttributes); }
+        }
+
+        // 保留原有属性(用于其他功能)
         private ObservableCollection<FactorScoreItem> _factorScores;
         public ObservableCollection<FactorScoreItem> FactorScores
         {
@@ -954,9 +963,12 @@ namespace HK_AREA_SEARCH
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine($">>> Extracting data for OID: {oid}");
+                System.Diagnostics.Debug.WriteLine($">>> Extracting ALL fields for OID: {oid}");
 
                 var plotInfo = new PlotInfo { ObjectID = oid };
+                
+                // ⭐ 新增: 存储所有字段
+                var allFieldValues = new Dictionary<string, object>();
 
                 // 创建查询过滤器
                 var queryFilter = new QueryFilter
@@ -971,47 +983,49 @@ namespace HK_AREA_SEARCH
                     {
                         using (var row = rowCursor.Current)
                         {
-                            // 1. 提取 gridcode（综合评分）
-                            try
-                            {
-                                plotInfo.GridCode = Convert.ToDouble(row["gridcode"]);
-                                System.Diagnostics.Debug.WriteLine($"GridCode: {plotInfo.GridCode}");
-                            }
-                            catch (Exception ex)
-                            {
-                                System.Diagnostics.Debug.WriteLine($"⚠️ gridcode 字段不存在或无效: {ex.Message}");
-                                plotInfo.GridCode = 0;
-                            }
-
-                            // 2. 提取所有 S_ 开头的单因子得分字段
+                            // ⭐ 修改: 提取所有字段(除了 Shape 字段)
                             var definition = row.GetTable().GetDefinition();
+                            
                             foreach (var field in definition.GetFields())
                             {
-                                if (field.Name.StartsWith("S_") && 
-                                    (field.FieldType == FieldType.Double || field.FieldType == FieldType.Single))
+                                // 跳过几何字段
+                                if (field.FieldType == FieldType.Geometry)
+                                    continue;
+
+                                try
                                 {
-                                    try
+                                    var value = row[field.Name];
+                                    allFieldValues[field.Name] = value;
+                                    
+                                    System.Diagnostics.Debug.WriteLine($"  {field.Name}: {value}");
+                                    
+                                    // 仍然提取 Rating 用于描述生成
+                                    if (field.Name == "Rating")
                                     {
-                                        var value = Convert.ToDouble(row[field.Name]);
-                                        plotInfo.FactorScores[field.Name] = value;
-                                        System.Diagnostics.Debug.WriteLine($"  {field.Name}: {value:F2}");
+                                        plotInfo.GridCode = Convert.ToDouble(value);
                                     }
-                                    catch
+                                    
+                                    // 仍然保存单因子得分(用于文字描述)
+                                    if (field.Name.StartsWith("S_") && 
+                                        (field.FieldType == FieldType.Double || field.FieldType == FieldType.Single))
                                     {
-                                        // 忽略无效字段
+                                        plotInfo.FactorScores[field.Name] = Convert.ToDouble(value);
                                     }
+                                }
+                                catch (Exception ex)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"  ⚠️ Failed to read {field.Name}: {ex.Message}");
                                 }
                             }
 
-                            // 3. 提取几何范围
+                            // 提取几何范围
                             if (row is Feature feature)
                             {
                                 var geometry = feature.GetShape();
                                 if (geometry != null)
                                 {
                                     plotInfo.Extent = geometry.Extent;
-                                    
-                                    // 计算面积（如果是多边形）
+
                                     if (geometry is Polygon polygon)
                                     {
                                         plotInfo.Area = polygon.Area;
@@ -1021,258 +1035,244 @@ namespace HK_AREA_SEARCH
                             }
                         }
                     }
+
+                    // ⭐ 更新 UI（必须在 UI 线程）
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        UpdatePlotDetails(plotInfo, allFieldValues);
+                    });
+
+                    // 缩放到地块
+                    await ZoomToPlotAsync(plotInfo.Extent);
+
+                    System.Diagnostics.Debug.WriteLine("✅ Plot data extracted successfully");
                 }
-
-                // 4. 更新 UI（必须在 UI 线程）
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-                {
-                    UpdatePlotDetails(plotInfo);
-                });
-
-                // 5. 缩放到地块
-                await ZoomToPlotAsync(plotInfo.Extent);
-
-                System.Diagnostics.Debug.WriteLine("✅ Plot data extracted successfully");
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"❌ ExtractPlotDataAsync failed: {ex.Message}");
             }
-        }
+}
 
-        /// <summary>
-        /// 更新地块详情界面
-        /// </summary>
-        private void UpdatePlotDetails(PlotInfo plotInfo)
+/// <summary>
+/// 更新地块详情界面
+/// </summary>
+private void UpdatePlotDetails(PlotInfo plotInfo, Dictionary<string, object> allFieldValues)
+{
+    try
+    {
+        System.Diagnostics.Debug.WriteLine("========== Updating Plot Details (All Fields) ==========");
+        System.Diagnostics.Debug.WriteLine($">>> Plot Info - OID: {plotInfo.ObjectID}");
+        System.Diagnostics.Debug.WriteLine($">>> Total Fields: {allFieldValues.Count}");
+
+        // 保存当前地块信息
+        SelectedPlotInfo = plotInfo;
+
+        // ⭐ 1. 填充所有字段到表格
+        FeatureAttributes = new ObservableCollection<FieldAttributeItem>();
+        
+        foreach (var kvp in allFieldValues.OrderBy(x => x.Key))
         {
-            try
+            var item = new FieldAttributeItem
             {
-                System.Diagnostics.Debug.WriteLine("========== Updating Plot Details ==========");
-                System.Diagnostics.Debug.WriteLine($">>> Plot Info - OID: {plotInfo.ObjectID}");
-                System.Diagnostics.Debug.WriteLine($">>> GridCode: {plotInfo.GridCode}");
-                System.Diagnostics.Debug.WriteLine($">>> Factor Scores Count: {plotInfo.FactorScores.Count}");
-
-                // 保存当前地块信息
-                SelectedPlotInfo = plotInfo;
-
-                // 1. 生成表格数据
-                FactorScores = new ObservableCollection<FactorScoreItem>();
-                
-                foreach (var kvp in plotInfo.FactorScores.OrderByDescending(x => x.Value))
-                {
-                    var item = new FactorScoreItem
-                    {
-                        FactorName = kvp.Key,
-                        DisplayName = ConvertFactorNameToDisplay(kvp.Key),
-                        Score = kvp.Value
-                    };
-                    
-                    FactorScores.Add(item);
-                    System.Diagnostics.Debug.WriteLine($"  Added: {item.DisplayName} = {item.Score:F2}");
-                }
-
-                System.Diagnostics.Debug.WriteLine($">>> Factor Scores Collection Count: {FactorScores.Count}");
-
-                // 2. 生成文字描述
-                System.Diagnostics.Debug.WriteLine(">>> Calling GeneratePlotDescription...");
-                PlotDescription = GeneratePlotDescription(plotInfo);
-                
-                // 添加调试:检查描述是否生成
-                System.Diagnostics.Debug.WriteLine($">>> PlotDescription Length: {PlotDescription?.Length ?? 0}");
-                System.Diagnostics.Debug.WriteLine($">>> PlotDescription Preview:");
-                if (!string.IsNullOrEmpty(PlotDescription))
-                {
-                    // 打印前 300 个字符
-                    var preview = PlotDescription.Length > 300 ? PlotDescription.Substring(0, 300) + "..." : PlotDescription;
-                    System.Diagnostics.Debug.WriteLine(preview);
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine("⚠️⚠️⚠️ PlotDescription is NULL or EMPTY!");
-                }
-
-                // 3. 自动切换到地块详情选项卡
-                SelectedTabIndex = 1;
-                System.Diagnostics.Debug.WriteLine($">>> Switched to Tab Index: {SelectedTabIndex}");
-
-                //  强制通知 UI 更新
-                NotifyPropertyChanged(() => PlotDescription);
-                System.Diagnostics.Debug.WriteLine(">>> Forced PlotDescription PropertyChanged notification");
-
-                System.Diagnostics.Debug.WriteLine("========== Plot Details Update Complete ==========");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"❌ UpdatePlotDetails failed: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"   Stack Trace: {ex.StackTrace}");
-            }
-        }
-
-        /// <summary>
-        /// 生成地块描述文字(简化版)
-        /// </summary>
-        private string GeneratePlotDescription(PlotInfo plotInfo)
-        {
-            var sb = new StringBuilder();
-
-            // 1. 标题(No need)
-
-            // 2. 综合评分
-            sb.AppendLine($"🎯 Overall Score: {plotInfo.GridCode:F2} / 10");
-
-            // 3. 综合评级(根据得分分级显示)
-            string rating, emoji, description;
-            
-            if (plotInfo.GridCode >= 8)
-            {
-                emoji = "🟢";
-                rating = "Excellent (极佳)";
-                description = "This plot is highly suitable for development with outstanding overall conditions.";
-            }
-            else if (plotInfo.GridCode >= 6)
-            {
-                emoji = "🟡";
-                rating = "Good (适宜)";
-                description = "This plot has good development potential with favorable conditions.";
-            }
-            else if (plotInfo.GridCode >= 4)
-            {
-                emoji = "🟠";
-                rating = "Fair (一般)";
-                description = "This plot has moderate suitability with some limitations to consider.";
-            }
-            else
-            {
-                emoji = "🔴";
-                rating = "Poor (较差)";
-                description = "This plot has significant challenges that may affect development feasibility.";
-            }
-            
-            sb.AppendLine($"{emoji} Overall Rating: {rating}");
-            sb.AppendLine($"   {description}");
-            sb.AppendLine();
-
-            // 4. 面积信息
-            if (plotInfo.Area.HasValue)
-            {
-                sb.AppendLine($"📐 Area: {plotInfo.Area.Value:N2} m²");
-                sb.AppendLine();
-            }
-
-            if (plotInfo.FactorScores.Count > 0)
-            {
-                // 5. 主要优势 (得分 >= 7)
-                var advantages = plotInfo.FactorScores
-                    .Where(f => f.Value >= 7)
-                    .OrderByDescending(f => f.Value)
-                    .ToList();
-                
-                if (advantages.Any())
-                {
-                    sb.AppendLine($"✅ Main Advantages (Score ≥ 7):");
-                    foreach (var factor in advantages)
-                    {
-                        sb.AppendLine($"   • {ConvertFactorNameToDisplay(factor.Key)}: {factor.Value:F2}");
-                    }
-                    sb.AppendLine();
-                }
-
-                // 6. 主要劣势 (得分 <= 3)
-                var disadvantages = plotInfo.FactorScores
-                    .Where(f => f.Value <= 3)
-                    .OrderBy(f => f.Value)
-                    .ToList();
-                
-                if (disadvantages.Any())
-                {
-                    sb.AppendLine($"⚠️ Main Disadvantages (Score ≤ 3):");
-                    foreach (var factor in disadvantages)
-                    {
-                        sb.AppendLine($"   • {ConvertFactorNameToDisplay(factor.Key)}: {factor.Value:F2}");
-                    }
-                    sb.AppendLine();
-                }
-
-                // 7. 如果没有明显优势或劣势
-                if (!advantages.Any() && !disadvantages.Any())
-                {
-                    sb.AppendLine($"ℹ️ All factors have moderate scores (3-7 range).");
-                    sb.AppendLine($"   This plot shows balanced but not exceptional characteristics.");
-                    sb.AppendLine();
-                }
-            }
-            else
-            {
-                sb.AppendLine("⚠️ No factor score data available.");
-                sb.AppendLine();
-            }
-
-            // 8. 时间戳
-            sb.AppendLine($"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-            sb.AppendLine($"Generated at: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// 转换因子字段名为显示名称
-        /// </summary>
-        private string ConvertFactorNameToDisplay(string factorName)
-        {
-            string name = factorName.StartsWith("S_") ? factorName.Substring(2) : factorName;
-
-            var nameMap = new Dictionary<string, string>
-            {
-                { "Traffic", "Traffic Accessibility" },
-                { "Facility", "Nearby Facilities" },
-                { "Noise", "Noise Level" },
-                { "Green", "Green Space" },
-                { "School", "School Proximity" },
-                { "Hospital", "Hospital Proximity" },
-                { "Metro", "Metro Station Proximity" },
-                { "Park", "Park Proximity" }
+                FieldName = kvp.Key,
+                FieldValue = FormatFieldValue(kvp.Value)
             };
-
-            return nameMap.ContainsKey(name) ? nameMap[name] : name;
+            
+            FeatureAttributes.Add(item);
+            System.Diagnostics.Debug.WriteLine($"  Added: {item.FieldName} = {item.FieldValue}");
         }
 
-        /// <summary>
-        /// 缩放到选中地块
-        /// </summary>
-        private async System.Threading.Tasks.Task ZoomToPlotAsync(Envelope extent)
+        System.Diagnostics.Debug.WriteLine($">>> Feature Attributes Count: {FeatureAttributes.Count}");
+
+        // 2. 生成文字描述(仍然使用单因子得分)
+        System.Diagnostics.Debug.WriteLine(">>> Calling GeneratePlotDescription...");
+        PlotDescription = GeneratePlotDescription(plotInfo);
+        
+        System.Diagnostics.Debug.WriteLine($">>> PlotDescription Length: {PlotDescription?.Length ?? 0}");
+
+        // 3. 自动切换到地块详情选项卡
+        SelectedTabIndex = 1;
+        System.Diagnostics.Debug.WriteLine($">>> Switched to Tab Index: {SelectedTabIndex}");
+
+        // 强制通知 UI 更新
+        NotifyPropertyChanged(() => PlotDescription);
+        System.Diagnostics.Debug.WriteLine(">>> Forced PlotDescription PropertyChanged notification");
+
+        System.Diagnostics.Debug.WriteLine("========== Plot Details Update Complete ==========");
+    }
+    catch (Exception ex)
+    {
+        System.Diagnostics.Debug.WriteLine($"❌ UpdatePlotDetails failed: {ex.Message}");
+        System.Diagnostics.Debug.WriteLine($"   Stack Trace: {ex.StackTrace}");
+    }
+}
+
+/// <summary>
+/// ⭐ 新增: 格式化字段值显示
+/// </summary>
+private string FormatFieldValue(object value)
+{
+    if (value == null || value == DBNull.Value)
+        return "<NULL>";
+
+    if (value is double doubleValue)
+        return doubleValue.ToString("F2");
+
+    if (value is float floatValue)
+        return floatValue.ToString("F2");
+
+    if (value is int || value is long || value is short)
+        return value.ToString();
+
+    if (value is DateTime dateTime)
+        return dateTime.ToString("yyyy-MM-dd HH:mm:ss");
+
+    return value.ToString();
+}
+
+/// <summary>
+/// ⭐ 修改: 简化描述文字生成,直接使用原始字段名
+/// </summary>
+private string GeneratePlotDescription(PlotInfo plotInfo)
+{
+    var sb = new StringBuilder();
+
+    // 1. 综合评分
+    sb.AppendLine($"🎯 Overall Score: {plotInfo.GridCode:F2} / 10");
+
+    // 2. 综合评级(根据得分分级显示)
+    string rating, emoji, description;
+    
+    if (plotInfo.GridCode >= 8)
+    {
+        emoji = "🟢";
+        rating = "Excellent (极佳)";
+        description = "This plot is highly suitable for development with outstanding overall conditions.";
+    }
+    else if (plotInfo.GridCode >= 6)
+    {
+        emoji = "🟡";
+        rating = "Good (适宜)";
+        description = "This plot has good development potential with favorable conditions.";
+    }
+    else if (plotInfo.GridCode >= 4)
+    {
+        emoji = "🟠";
+        rating = "Fair (一般)";
+        description = "This plot has moderate suitability with some limitations to consider.";
+    }
+    else
+    {
+        emoji = "🔴";
+        rating = "Poor (较差)";
+        description = "This plot has significant challenges that may affect development feasibility.";
+    }
+    
+    sb.AppendLine($"{emoji} Overall Rating: {rating}");
+    sb.AppendLine($"   {description}");
+    sb.AppendLine();
+
+    // 3. 面积信息
+    if (plotInfo.Area.HasValue)
+    {
+        sb.AppendLine($"📐 Area: {plotInfo.Area.Value:N2} m²");
+        sb.AppendLine();
+    }
+
+    if (plotInfo.FactorScores.Count > 0)
+    {
+        // 4. 主要优势 (得分 >= 7)
+        var advantages = plotInfo.FactorScores
+            .Where(f => f.Value >= 7)
+            .OrderByDescending(f => f.Value)
+            .ToList();
+        
+        if (advantages.Any())
         {
-            if (extent == null)
+            sb.AppendLine($"✅ Main Advantages (Score ≥ 7):");
+            foreach (var factor in advantages)
             {
-                System.Diagnostics.Debug.WriteLine("⚠️ Extent is null, cannot zoom");
+                // ⭐ 直接显示原始字段名
+                sb.AppendLine($"   • {factor.Key}: {factor.Value:F2}");
+            }
+            sb.AppendLine();
+        }
+
+        // 5. 主要劣势 (得分 <= 3)
+        var disadvantages = plotInfo.FactorScores
+            .Where(f => f.Value <= 3)
+            .OrderBy(f => f.Value)
+            .ToList();
+        
+        if (disadvantages.Any())
+        {
+            sb.AppendLine($"⚠️ Main Disadvantages (Score ≤ 3):");
+            foreach (var factor in disadvantages)
+            {
+                // ⭐ 直接显示原始字段名
+                sb.AppendLine($"   • {factor.Key}: {factor.Value:F2}");
+            }
+            sb.AppendLine();
+        }
+
+        // 6. 如果没有明显优势或劣势
+        if (!advantages.Any() && !disadvantages.Any())
+        {
+            sb.AppendLine($"ℹ️ All factors have moderate scores (3-7 range).");
+            sb.AppendLine($"   This plot shows balanced but not exceptional characteristics.");
+            sb.AppendLine();
+        }
+    }
+    else
+    {
+        sb.AppendLine("⚠️ No factor score data available.");
+        sb.AppendLine();
+    }
+
+    // 7. 时间戳
+    sb.AppendLine($"Generated at: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+
+    return sb.ToString();
+}
+
+/// <summary>
+/// 缩放到选中地块
+/// </summary>
+private async System.Threading.Tasks.Task ZoomToPlotAsync(Envelope extent)
+{
+    if (extent == null)
+    {
+        System.Diagnostics.Debug.WriteLine("⚠️ Extent is null, cannot zoom");
+        return;
+    }
+
+    await QueuedTask.Run(() =>
+    {
+        try
+        {
+            var mapView = MapView.Active;
+            if (mapView == null)
+            {
+                System.Diagnostics.Debug.WriteLine("⚠️ No active map view");
                 return;
             }
 
-            await QueuedTask.Run(() =>
-            {
-                try
-                {
-                    var mapView = MapView.Active;
-                    if (mapView == null)
-                    {
-                        System.Diagnostics.Debug.WriteLine("⚠️ No active map view");
-                        return;
-                    }
+            var expandedExtent = extent.Expand(1.2, 1.2, true);
+            mapView.ZoomTo(expandedExtent, TimeSpan.FromSeconds(0.8));
 
-                    var expandedExtent = extent.Expand(1.2, 1.2, true);
-                    mapView.ZoomTo(expandedExtent, TimeSpan.FromSeconds(0.8));
-
-                    System.Diagnostics.Debug.WriteLine($"✅ Zoomed to plot extent");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"❌ ZoomToPlotAsync failed: {ex.Message}");
-                }
-            });
+            System.Diagnostics.Debug.WriteLine($"✅ Zoomed to plot extent");
         }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"❌ ZoomToPlotAsync failed: {ex.Message}");
+        }
+    });
+}
 
-        #endregion
+#endregion
 
-        #region DockPane方法
+#region DockPane方法
 
 /// <summary>
 /// 显示 DockPane

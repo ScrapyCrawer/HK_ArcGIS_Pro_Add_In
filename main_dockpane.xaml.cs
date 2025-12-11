@@ -115,5 +115,10 @@ namespace HK_AREA_SEARCH
         }
 
         #endregion
+
+        private void DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
     }
 }

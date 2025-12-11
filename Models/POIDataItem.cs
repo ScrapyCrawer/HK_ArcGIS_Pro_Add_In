@@ -107,7 +107,7 @@ namespace HK_AREA_SEARCH.Models
             get => _customInterval;
             set
             {
-                // ⭐ 移除条件判断，确保每次都触发属性变化通知
+                //  移除条件判断，确保每次都触发属性变化通知
                 var oldValue = _customInterval;
                 _customInterval = value;
                 OnPropertyChanged();
@@ -128,7 +128,7 @@ namespace HK_AREA_SEARCH.Models
         }
 
         /// <summary>
-        /// ⭐ 新增: 是否需要弹出自定义间隔对话框
+        /// 新增: 是否需要弹出自定义间隔对话框
         /// </summary>
         public bool NeedsCustomIntervalDialog
         {
@@ -139,7 +139,7 @@ namespace HK_AREA_SEARCH.Models
         }
 
         /// <summary>
-        /// ⭐ 新增: 存储的自定义间隔配置
+        /// 新增: 存储的自定义间隔配置
         /// </summary>
         public List<IntervalClassItem> CustomIntervalClasses
         {
@@ -152,7 +152,7 @@ namespace HK_AREA_SEARCH.Models
         }
 
         /// <summary>
-        /// ⭐ 新增: 标记自定义间隔已配置
+        /// 新增: 标记自定义间隔已配置
         /// </summary>
         public void MarkCustomIntervalConfigured()
         {

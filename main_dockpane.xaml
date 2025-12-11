@@ -39,7 +39,7 @@
                 <Setter Property="FontFamily" Value="Microsoft YaHei"/>
             </Style>
 
-            <!-- ⭐ Tab Header 样式 -->
+            <!-- Tab Header 样式 -->
             <Style x:Key="TabHeaderStyle" TargetType="TextBlock">
                 <Setter Property="FontSize" Value="13"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
@@ -62,13 +62,6 @@
             </Grid.ColumnDefinitions>
 
             <!-- 标题 -->
-            <TextBlock Grid.Column="0"
-                       Text="Hong Kong Site Selection Tool"
-                       Style="{DynamicResource Esri_TextBlockDockPaneHeader}"
-                       FontSize="18"
-                       FontFamily="Microsoft YaHei"
-                       HorizontalAlignment="Center"
-                       Margin="0,0,0,10"/>
 
         </Grid>
 
@@ -403,17 +396,17 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <!-- 输入区域 -->
-                        <RowDefinition Height="2*"/>
+                        <RowDefinition Height="103*"/>
                         <!-- 上半部分：表格 -->
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="82*"/>
                         <!-- 下半部分：文字描述 -->
                     </Grid.RowDefinitions>
 
                     <!-- SHP 文件输入区域 -->
                     <Border Grid.Row="0" 
                             BorderBrush="Black" 
-                            BorderThickness="2" 
-                            CornerRadius="5"
+                            BorderThickness="1" 
+                            CornerRadius="0"
                             Padding="10"
                             Margin="0,0,0,10">
                         <Grid>
@@ -471,13 +464,11 @@
                         </Grid>
                     </Border>
 
-                    <!-- 上半部分：单因子得分表格 -->
+                    <!-- 上半部分：所有字段显示表格 -->
                     <Border Grid.Row="1" 
                             BorderBrush="Black" 
-                            BorderThickness="2" 
-                            CornerRadius="5"
-                            Margin="0,0,0,47">
-                        <!-- 表格内容保持不变 -->
+                            BorderThickness="1" 
+                            CornerRadius="0" Height="301" VerticalAlignment="Center">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -496,7 +487,7 @@
 
                                     <!-- 标题 -->
                                     <TextBlock Grid.Column="0"
-                                               Text="📊 Factor Scores" 
+                                               Text="📊 Feature Attributes" 
                                                FontSize="14" 
                                                FontWeight="Bold" 
                                                FontFamily="Microsoft YaHei"
@@ -511,7 +502,8 @@
                                             Padding="10,5"
                                             Foreground="White"
                                             BorderThickness="0"
-                                            ToolTip="Click to enable/disable plot browsing mode" BorderBrush="#FFD81A1A">
+                                            ToolTip="Click to enable/disable plot browsing mode" 
+                                            BorderBrush="#FFD81A1A">
                                         <Button.Style>
                                             <Style TargetType="Button">
                                                 <Setter Property="Background" Value="{Binding PlotListeningButtonColor}"/>
@@ -527,8 +519,9 @@
                                 </Grid>
                             </Border>
 
+                            <!-- ⭐ 修改: 显示所有字段名和值 -->
                             <DataGrid Grid.Row="1" 
-                                      ItemsSource="{Binding FactorScores}"
+                                      ItemsSource="{Binding FeatureAttributes}"
                                       AutoGenerateColumns="False"
                                       IsReadOnly="True"
                                       CanUserAddRows="False"
@@ -546,30 +539,31 @@
                                       Background="{x:Null}">
 
                                 <DataGrid.Columns>
-                                    <!-- 因子名称列 -->
-                                    <DataGridTextColumn Header="Factor Name" 
+                                    <!-- 字段名列 -->
+                                    <DataGridTextColumn Header="Field Name" 
                                                         Width="2*"
-                                                        Binding="{Binding DisplayName}">
+                                                        Binding="{Binding FieldName}">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="VerticalAlignment" Value="Center"/>
                                                 <Setter Property="Padding" Value="8,3"/>
-                                                <Setter Property="FontWeight" Value="Normal"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
                                                 <Setter Property="FontSize" Value="11"/>
                                             </Style>
                                         </DataGridTextColumn.ElementStyle>
                                     </DataGridTextColumn>
 
-                                    <!-- 得分列 -->
-                                    <DataGridTextColumn Header="Score (out of 10)" 
-                                                        Width="*"
-                                                        Binding="{Binding Score, StringFormat=F2}">
+                                    <!-- 字段值列 -->
+                                    <DataGridTextColumn Header="Field Value" 
+                                                        Width="3*"
+                                                        Binding="{Binding FieldValue}">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock">
-                                                <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                <Setter Property="HorizontalAlignment" Value="Left"/>
                                                 <Setter Property="VerticalAlignment" Value="Center"/>
-                                                <Setter Property="FontWeight" Value="Bold"/>
-                                                <Setter Property="FontSize" Value="13"/>
+                                                <Setter Property="Padding" Value="8,3"/>
+                                                <Setter Property="FontWeight" Value="Normal"/>
+                                                <Setter Property="FontSize" Value="11"/>
                                                 <Setter Property="Foreground" Value="#FF1E90FF"/>
                                             </Style>
                                         </DataGridTextColumn.ElementStyle>
@@ -580,10 +574,10 @@
                     </Border>
 
                     <!-- 下半部分：文字描述 -->
-                    <Border Grid.Row="1" 
+                    <Border Grid.Row="2" 
                             BorderBrush="Black" 
-                            BorderThickness="2" 
-                            CornerRadius="5" Margin="0,304,0,0" Grid.RowSpan="2">
+                            BorderThickness="1" 
+                            CornerRadius="0">
                         <!-- 内容保持不变 -->
                         <Grid>
                             <Grid.RowDefinitions>
