@@ -1,21 +1,22 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 using ArcGIS.Core.CIM;
 using ArcGIS.Core.Data;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Core;
-using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Core.Geoprocessing;
+using ArcGIS.Desktop.Editing;
+using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Internal.Core;
 using ArcGIS.Desktop.Mapping;
-using ArcGIS.Desktop.Framework.Threading.Tasks;
 using HK_AREA_SEARCH.Common;
-using HK_AREA_SEARCH.Infrastructure.Services;
 using HK_AREA_SEARCH.Infrastructure.Helpers;
+using HK_AREA_SEARCH.Infrastructure.Services;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace HK_AREA_SEARCH.Divide
+namespace HK_AREA_SEARCH.Business.Divide
 {
     /// <summary>
     /// 几何处理器
@@ -28,12 +29,16 @@ namespace HK_AREA_SEARCH.Divide
         /// <param name="inputPaths">输入要素路径列表</param>
         /// <param name="tempFileManager">临时文件管理器</param>
         /// <returns>合并后要素路径</returns>
-        public async Task<string> Union(List<string> inputPaths, TempFileManager tempFileManager)
+        public static async Task<string> Union(List<string> inputPaths, TempFileManager tempFileManager)
         {
             return await QueuedTask.Run(async () =>
             {
                 try
                 {
+                    LogService.LogInfo("=== Union Operation ===");
+                    LogService.LogInfo($"Machine: {Environment.MachineName}, User: {Environment.UserName}");
+                    LogService.LogInfo($"Input count: {inputPaths?.Count ?? 0}");
+
                     // 如果只有一个输入，直接返回
                     if (inputPaths.Count == 1)
                         return inputPaths[0];
@@ -41,23 +46,61 @@ namespace HK_AREA_SEARCH.Divide
                     // 创建临时输出文件路径
                     string outputPath = tempFileManager.CreateTempFile("MergedConstraints.shp");
                     tempFileManager.RegisterTempFile(outputPath);
+                    
+                    LogService.LogInfo($"Output: {outputPath}");
 
-                    // 使用ArcGIS Pro的Union工具，设置环境参数以防止自动添加到地图
+                    // 执行 Union 工具
+                    LogService.LogInfo("Executing analysis.Union...");
+
+                    string inputFeaturesParam;
+                    if (inputPaths.Count == 1)
+                        inputFeaturesParam = inputPaths[0];
+                    else
+                        inputFeaturesParam = string.Join(";", inputPaths);
+
+                    // 记录实际传入 GP 的参数（非常重要）
+                    LogService.LogInfo($"GP Input Features Param: {inputFeaturesParam}");
+
+                    // 构造参数并执行
                     var environment = Geoprocessing.MakeEnvironmentArray(overwriteoutput: true);
-                    var parameters = Geoprocessing.MakeValueArray(inputPaths, outputPath);
+                    var parameters = Geoprocessing.MakeValueArray(inputFeaturesParam, outputPath);
                     var result = await Geoprocessing.ExecuteToolAsync("analysis.Union", parameters, environment, null, null, GPExecuteToolFlags.AddToHistory);
 
                     if (result.IsFailed)
                     {
-                        // 将错误消息列表转换为字符串
+                        LogService.LogError("=== UNION FAILED ===");
+                        LogService.LogError($"Return Code: {result.ReturnValue}");
+                        
+                        // 记录所有错误消息
+                        if (result.ErrorMessages != null && result.ErrorMessages.Any())
+                        {
+                            LogService.LogError("Error Messages:");
+                            foreach (var error in result.ErrorMessages)
+                            {
+                                LogService.LogError($"  {error}");
+                            }
+                        }
+                        
+                        // 记录所有附加消息（可能包含更多线索）
+                        if (result.Messages != null && result.Messages.Any())
+                        {
+                            LogService.LogError("All Messages:");
+                            foreach (var msg in result.Messages)
+                            {
+                                LogService.LogError($"  {msg}");
+                            }
+                        }
+
                         string errorMessages = string.Join("; ", result.ErrorMessages);
                         throw new Exception($"合并约束条件失败: {errorMessages}");
                     }
 
+                    LogService.LogInfo("Union completed successfully");
                     return outputPath;
                 }
                 catch (Exception ex)
                 {
+                    LogService.LogError($"Union Exception: {ex.Message}");
                     throw new Exception($"几何合并操作失败: {ex.Message}", ex);
                 }
             });
@@ -66,17 +109,15 @@ namespace HK_AREA_SEARCH.Divide
         /// <summary>
         /// 差集运算
         /// </summary>
-        /// <param name="inputPath1">被减要素路径（分析区域）</param>
-        /// <param name="inputPath2">减数要素路径（约束条件）</param>
-        /// <param name="outputPath">输出路径</param>
-        /// <returns>差集运算结果路径</returns>
-        public async Task<string> Difference(string inputPath1, string inputPath2, string outputPath)
+        public static async Task<string> Difference(string inputPath1, string inputPath2, string outputPath)
         {
             return await QueuedTask.Run(async () =>
             {
                 try
                 {
-                    // 使用ArcGIS Pro的Erase工具
+                    LogService.LogInfo("=== Difference Operation ===");
+                    LogService.LogInfo("Executing analysis.Erase...");
+                    
                     var environment = Geoprocessing.MakeEnvironmentArray(overwriteoutput: true);
                     var parameters = Geoprocessing.MakeValueArray(inputPath1, inputPath2, outputPath);
 
@@ -86,24 +127,41 @@ namespace HK_AREA_SEARCH.Divide
                         environment, 
                         null, 
                         null, 
-                        GPExecuteToolFlags.None); 
+                        GPExecuteToolFlags.AddToHistory);
 
                     if (result.IsFailed)
                     {
+                        LogService.LogError("=== ERASE FAILED ===");
+                        LogService.LogError($"Return Code: {result.ReturnValue}");
+                        
+                        if (result.ErrorMessages != null && result.ErrorMessages.Any())
+                        {
+                            LogService.LogError("Error Messages:");
+                            foreach (var error in result.ErrorMessages)
+                            {
+                                LogService.LogError($"  {error}");
+                            }
+                        }
+                        
+                        if (result.Messages != null && result.Messages.Any())
+                        {
+                            LogService.LogError("All Messages:");
+                            foreach (var msg in result.Messages)
+                            {
+                                LogService.LogError($"  {msg}");
+                            }
+                        }
+
                         string errorMessages = string.Join("; ", result.ErrorMessages);
                         throw new Exception($"差集运算失败: {errorMessages}");
                     }
 
-                    // 执行 Multipart To Singlepart 确保结果一致性
-                    // 如果不需要拆分多部件几何，可以注释掉这段
-                    // string singlepartOutput = outputPath.Replace(".shp", "_single.shp");
-                    // await ConvertMultipartToSinglepart(outputPath, singlepartOutput);
-                    // return singlepartOutput;
-
+                    LogService.LogInfo("Erase completed successfully");
                     return outputPath;
                 }
                 catch (Exception ex)
                 {
+                    LogService.LogError($"Difference Exception: {ex.Message}");
                     throw new Exception($"几何差集运算失败: {ex.Message}", ex);
                 }
             });

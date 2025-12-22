@@ -1,4 +1,4 @@
-﻿<ArcGIS defaultAssembly="HK_AREA_SEARCH.dll" defaultNamespace="HK_AREA_SEARCH" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///D:/ArcGIS%20Pro/bin/ArcGIS.Desktop.Framework.xsd">
+﻿<ArcGIS defaultAssembly="HK_AREA_SEARCH.dll" defaultNamespace="HK_AREA_SEARCH" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///D:/arcgispro/install/bin/ArcGIS.Desktop.Framework.xsd">
   <AddInInfo id="{5d4182cc-7841-4855-b9a3-3df249e8d7d6}" version="1.0" desktopVersion="3.0.36056">
     <Name>HK_AREA_SEARCH</Name>
     <Description>A comprehensive site selection tool for Hong Kong area analysis, including constraint filtering, distance calculation, and rating evaluation.</Description>

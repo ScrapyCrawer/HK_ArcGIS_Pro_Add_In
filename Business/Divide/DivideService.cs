@@ -6,12 +6,12 @@ using HK_AREA_SEARCH.Infrastructure.Services;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 
-namespace HK_AREA_SEARCH.Divide
+namespace HK_AREA_SEARCH.Business.Divide
 {
     /// <summary>
     /// 可建设土地划分服务实现
     /// </summary>
-    public class DivideService : IDivideService
+    public class DivideService : HK_AREA_SEARCH.Divide.IDivideService
     {
         private readonly TempFileManager _tempFileManager;
 
@@ -23,12 +23,6 @@ namespace HK_AREA_SEARCH.Divide
         /// <summary>
         /// 执行可建设土地划分
         /// </summary>
-        /// <param name="analysisAreaPath">分析区域路径</param>
-        /// <param name="constraintPaths">约束条件路径列表</param>
-        /// <param name="outputPath">输出路径</param>
-        /// <param name="minArea">最小面积阈值(平方米),null则使用默认值200.7</param>
-        /// <param name="maxArea">最大面积阈值(平方米),null则不限制</param>
-        /// <returns>生成的可建设土地文件路径</returns>
         public async Task<string> ExecuteAsync(
             string analysisAreaPath,
             List<string> constraintPaths,
@@ -38,29 +32,46 @@ namespace HK_AREA_SEARCH.Divide
         {
             try
             {
+                LogService.LogInfo("╔════════════════════════════════════════╗");
+                LogService.LogInfo("║  Divide Service - Execute Started      ║");
+                LogService.LogInfo("╚════════════════════════════════════════╝");
+                
                 await ValidateInputs(analysisAreaPath, constraintPaths);
                 
+                LogService.LogInfo("Step 1: Merging constraints...");
                 string mergedConstraintsPath = await MergeConstraints(constraintPaths);
+                
+                LogService.LogInfo("Step 2: Performing difference operation...");
                 string differenceResultPath = await PerformDifference(analysisAreaPath, mergedConstraintsPath, outputPath);
+                
+                LogService.LogInfo("Step 3: Filtering by area...");
                 string filteredResultPath = await FilterByArea(differenceResultPath, minArea, maxArea);
 
                 if (filteredResultPath != outputPath)
                 {
+                    LogService.LogInfo("Step 4: Copying to output path...");
                     await CopyToOutputPath(filteredResultPath, outputPath);
                 }
+
+                LogService.LogInfo("✅ Divide Service completed successfully");
+                LogService.LogInfo($"   Output: {outputPath}\n");
 
                 return outputPath;
             }
             catch (Exception ex)
             {
-                throw new Exception($"划分可建设土地失败: {ex.Message}", ex);
+                // 尝试记录日志，忽略错误
+                try { LogService.LogError($"Divide Service failed: {ex.Message}"); } catch { }
+                
+                // 修改这里：抛出包含完整堆栈信息的异常
+                throw new Exception($"划分可建设土地失败。\n\n>>> 错误详情:\n{ex.Message}\n\n>>> 堆栈跟踪:\n{ex.StackTrace}", ex);
             }
         }
 
         /// <summary>
         /// 验证输入数据
         /// </summary>
-        private async Task ValidateInputs(string analysisAreaPath, List<string> constraintPaths)
+        private static async Task ValidateInputs(string analysisAreaPath, List<string> constraintPaths)
         {
             await Task.Run(() =>
             {
@@ -86,8 +97,8 @@ namespace HK_AREA_SEARCH.Divide
         /// </summary>
         private async Task<string> MergeConstraints(List<string> constraintPaths)
         {
-            var geometryProcessor = new GeometryProcessor();
-            return await geometryProcessor.Union(constraintPaths, _tempFileManager);
+            // 直接调用静态方法，不需要创建实例
+            return await GeometryProcessor.Union(constraintPaths, _tempFileManager);
         }
 
         /// <summary>
@@ -95,13 +106,12 @@ namespace HK_AREA_SEARCH.Divide
         /// </summary>
         private async Task<string> PerformDifference(string analysisAreaPath, string constraintsPath, string outputPath)
         {
-            var geometryProcessor = new GeometryProcessor();
-
             // 创建临时输出路径
             string tempOutputPath = _tempFileManager.CreateTempFile("difference_result.shp");
             _tempFileManager.RegisterTempFile(tempOutputPath);
 
-            return await geometryProcessor.Difference(analysisAreaPath, constraintsPath, tempOutputPath);
+            // 直接调用静态方法，不需要创建实例
+            return await GeometryProcessor.Difference(analysisAreaPath, constraintsPath, tempOutputPath);
         }
 
         /// <summary>
@@ -112,18 +122,18 @@ namespace HK_AREA_SEARCH.Divide
             // 如果最小和最大面积都为null,跳过过滤
             if (minArea == null && maxArea == null)
             {
-                System.Diagnostics.Debug.WriteLine("Area filter disabled - skipping");
+                LogService.LogInfo("Area filter disabled - skipping");
                 return inputPath;
             }
 
-            var areaFilter = new AreaFilter(_tempFileManager);
+            var areaFilter = new HK_AREA_SEARCH.Divide.AreaFilter(_tempFileManager);
             string filteredPath = await areaFilter.FilterByAreaAsync(inputPath, minArea, maxArea);
 
             // 获取并输出统计信息
             string statistics = await areaFilter.GetFilterStatistics(inputPath, filteredPath);
-            System.Diagnostics.Debug.WriteLine($"========== Area Filter Statistics ==========");
-            System.Diagnostics.Debug.WriteLine(statistics);
-            System.Diagnostics.Debug.WriteLine($"===========================================");
+            LogService.LogInfo("========== Area Filter Statistics ==========");
+            LogService.LogInfo(statistics);
+            LogService.LogInfo("============================================");
 
             return filteredPath;
         }
@@ -131,12 +141,14 @@ namespace HK_AREA_SEARCH.Divide
         /// <summary>
         /// 复制到最终输出路径
         /// </summary>
-        private async Task CopyToOutputPath(string sourcePath, string targetPath)
+        private static async Task CopyToOutputPath(string sourcePath, string targetPath)
         {
             await Task.Run(() =>
             {
                 try
                 {
+                    LogService.LogInfo($"Copying from {Path.GetFileName(sourcePath)} to {Path.GetFileName(targetPath)}");
+                    
                     // 复制 shapefile 及其相关文件
                     string sourceDir = Path.GetDirectoryName(sourcePath);
                     string targetDir = Path.GetDirectoryName(targetPath);
@@ -146,6 +158,7 @@ namespace HK_AREA_SEARCH.Divide
                     // Shapefile 相关扩展名
                     string[] extensions = { ".shp", ".shx", ".dbf", ".prj", ".sbn", ".sbx", ".cpg" };
 
+                    int copiedCount = 0;
                     foreach (var ext in extensions)
                     {
                         string sourceFile = Path.Combine(sourceDir, sourceBase + ext);
@@ -154,12 +167,16 @@ namespace HK_AREA_SEARCH.Divide
                         if (File.Exists(sourceFile))
                         {
                             File.Copy(sourceFile, targetFile, true);
+                            copiedCount++;
                         }
                     }
+                    
+                    LogService.LogInfo($"Copied {copiedCount} files successfully");
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"警告: 复制到输出路径失败: {ex.Message}");
+                    LogService.LogWarning($"Copy to output failed: {ex.Message}");
+                    throw;
                 }
             });
         }

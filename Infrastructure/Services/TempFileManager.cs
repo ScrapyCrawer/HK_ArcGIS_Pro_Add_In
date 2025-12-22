@@ -18,14 +18,14 @@ namespace HK_AREA_SEARCH.Infrastructure.Services
         {
             _tempFiles = new List<string>();
             
-            // ⭐ 关键修改: 使用时间戳+GUID创建唯一临时文件夹
+            //使用时间戳+GUID创建唯一临时文件夹
             string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             string uniqueId = Guid.NewGuid().ToString("N").Substring(0, 8);
             
             _tempDirectory = Path.Combine(
                 Path.GetTempPath(),
                 "HK_AREA_SEARCH",
-                $"{timestamp}_{uniqueId}"  // ⭐ 每次运行使用不同的文件夹
+                $"{timestamp}_{uniqueId}"  //  每次运行使用不同的文件夹
             );
 
             if (!Directory.Exists(_tempDirectory))
@@ -48,7 +48,7 @@ namespace HK_AREA_SEARCH.Infrastructure.Services
             {
                 string fullPath = Path.Combine(_tempDirectory, fileName);
                 
-                // ⭐ 由于每次都是新文件夹,理论上不会冲突
+                // 由于每次都是新文件夹,理论上不会冲突
                 // 但为了保险,仍然检查
                 if (File.Exists(fullPath))
                 {
@@ -81,7 +81,7 @@ namespace HK_AREA_SEARCH.Infrastructure.Services
         }
 
         /// <summary>
-        /// ⭐ 改进: 清理所有临时文件和文件夹
+        /// 清理所有临时文件和文件夹
         /// </summary>
         public void CleanupAll()
         {
@@ -102,7 +102,7 @@ namespace HK_AREA_SEARCH.Infrastructure.Services
 
                 _tempFiles.Clear();
 
-                // 2. ⭐ 清理整个临时文件夹
+                // 2.  清理整个临时文件夹
                 if (Directory.Exists(_tempDirectory))
                 {
                     try
@@ -126,7 +126,7 @@ namespace HK_AREA_SEARCH.Infrastructure.Services
         }
 
         /// <summary>
-        /// ⭐ 新增: 尝试删除文件 (包括Shapefile相关文件)
+        ///  尝试删除文件 (包括Shapefile相关文件)
         /// </summary>
         private bool TryDeleteFile(string filePath)
         {
@@ -157,7 +157,7 @@ namespace HK_AREA_SEARCH.Infrastructure.Services
         }
 
         /// <summary>
-        /// ⭐ 新增: 删除 Shapefile 的所有关联文件
+        ///  删除 Shapefile 的所有关联文件
         /// </summary>
         private void DeleteShapefileSet(string shpPath)
         {

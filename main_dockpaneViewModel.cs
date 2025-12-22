@@ -24,6 +24,7 @@ using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using System.Text;
 using ProgressDialog = HK_AREA_SEARCH.Views.ProgressDialog;
+using HK_AREA_SEARCH.Business.Divide;
 
 namespace HK_AREA_SEARCH
 {
@@ -291,15 +292,15 @@ namespace HK_AREA_SEARCH
 
         private void InitializeCommands()
         {
-            BrowseConstraintCommand = new RelayCommand(BrowseConstraintData, (object parameter) => true);
-            BrowseAnalysisAreaCommand = new RelayCommand(BrowseAnalysisArea, (object parameter) => true);
-            BrowsePOICommand = new RelayCommand(BrowsePOIData, (object parameter) => true);
-            BrowseOutputCommand = new RelayCommand(BrowseOutputPath, (object parameter) => true);
+            BrowseConstraintCommand = new RelayCommand(BrowseConstraintData, parameter => true);
+            BrowseAnalysisAreaCommand = new RelayCommand(BrowseAnalysisArea, parameter => true);
+            BrowsePOICommand = new RelayCommand(BrowsePOIData,  parameter => true);
+            BrowseOutputCommand = new RelayCommand(BrowseOutputPath, parameter => true);
             RunAnalysisCommand = new RelayCommand(async (param) => await RunAnalysisAsync(param), CanRunAnalysis);
-            ClearConstraintsCommand = new RelayCommand(ClearConstraints, (object parameter) => true);
-            ClearPOIsCommand = new RelayCommand(ClearPOIs, (object parameter) => true);
-            BrowseResultShapefileCommand = new RelayCommand(BrowseResultShapefile, (object parameter) => true);  // ⭐ 初始化命令
-            TogglePlotListeningCommand = new RelayCommand(TogglePlotListening, (object parameter) => true);  // ⭐ 初始化命令
+            ClearConstraintsCommand = new RelayCommand(ClearConstraints, parameter => true);
+            ClearPOIsCommand = new RelayCommand(ClearPOIs, parameter => true);
+            BrowseResultShapefileCommand = new RelayCommand(BrowseResultShapefile, parameter => true);  // ⭐ 初始化命令
+            TogglePlotListeningCommand = new RelayCommand(TogglePlotListening, parameter => true);  // ⭐ 初始化命令
         }
 
         #endregion
@@ -325,15 +326,15 @@ namespace HK_AREA_SEARCH
 
         private void AddEmptyConstraintRow()
         {
-            var newItem = new ConstraintDataItem();
-            newItem.PropertyChanged += (sender, e) =>
+            var newitem = new ConstraintDataItem();
+            newitem.PropertyChanged += (sender, e) =>
             {
                 if (e.PropertyName == nameof(ConstraintDataItem.DataPath))
                 {
                     CheckAndAddEmptyConstraintRow();
                 }
             };
-            ConstraintItems.Add(newItem);
+            ConstraintItems.Add(newitem);
         }
 
         private void AddEmptyPOIRow()
@@ -353,8 +354,7 @@ namespace HK_AREA_SEARCH
 
                 if (e.PropertyName == nameof(POIDataItem.NeedsCustomIntervalDialog))
                 {
-                    var poiItem = sender as POIDataItem;
-                    if (poiItem != null && poiItem.NeedsCustomIntervalDialog)
+                    if (sender is POIDataItem poiItem && poiItem.NeedsCustomIntervalDialog)
                     {
                         ShowCustomIntervalDialog(poiItem);
                     }
@@ -385,7 +385,7 @@ namespace HK_AREA_SEARCH
 
         #region 方法
 
-        private void ShowCustomIntervalDialog(POIDataItem poiItem)
+        private static void ShowCustomIntervalDialog(POIDataItem poiItem)
         {
             try
             {
@@ -400,14 +400,13 @@ namespace HK_AREA_SEARCH
                 if (result == true)
                 {
                     System.Diagnostics.Debug.WriteLine("User confirmed custom intervals");
-                    
-                    var viewModel = dialog.DataContext as CustomIntervalDialogViewModel;
-                    if (viewModel != null && viewModel.ClassItems != null)
+
+                    if (dialog.DataContext is CustomIntervalDialogViewModel viewModel && viewModel.ClassItems != null)
                     {
                         poiItem.CustomIntervalClasses = new List<IntervalClassItem>(viewModel.ClassItems);
                         System.Diagnostics.Debug.WriteLine($"Saved {poiItem.CustomIntervalClasses.Count} custom intervals");
                     }
-                    
+
                     poiItem.MarkCustomIntervalConfigured();
                     
                     MessageBox.Show($"Custom intervals configured for {poiItem.DataName}", "Success");
@@ -458,12 +457,11 @@ namespace HK_AREA_SEARCH
         }
 
         /// <summary>
-        /// ⭐ 改进: 浏览约束条件数据 - 支持多选
+        /// 浏览约束条件数据 - 支持多选
         /// </summary>
         private void BrowseConstraintData(object parameter)
         {
-            var item = parameter as ConstraintDataItem;
-            if (item == null) return;
+            if (parameter is not ConstraintDataItem item) return;
 
             var dialog = new OpenFileDialog
             {
@@ -537,8 +535,7 @@ namespace HK_AREA_SEARCH
 
         private void BrowsePOIData(object parameter)
         {
-            var item = parameter as POIDataItem;
-            if (item == null) return;
+            if (parameter is not POIDataItem item) return;
 
             var dialog = new OpenFileDialog
             {
@@ -588,8 +585,7 @@ namespace HK_AREA_SEARCH
                             // ⭐ 修改: 监听 NeedsCustomIntervalDialog 而不是 CustomInterval
                             if (e.PropertyName == nameof(POIDataItem.NeedsCustomIntervalDialog))
                             {
-                                var poiItem = sender as POIDataItem;
-                                if (poiItem != null && poiItem.NeedsCustomIntervalDialog)
+                                if (sender is POIDataItem poiItem && poiItem.NeedsCustomIntervalDialog)
                                 {
                                     ShowCustomIntervalDialog(poiItem);
                                 }
@@ -657,10 +653,12 @@ namespace HK_AREA_SEARCH
             {
                 //  运行前清理旧的临时文件夹 (可选,清理7天前的)
                 TempFileManager.CleanupOldTempFolders(7);
-                
+
                 // 创建并显示进度对话框
-                _progressDialog = new ProgressDialog();
-                _progressDialog.Owner = System.Windows.Application.Current.MainWindow;
+                _progressDialog = new ProgressDialog
+                {
+                    Owner = System.Windows.Application.Current.MainWindow
+                };
                 _progressDialog.Show();
 
                 ReportProgress("Validating inputs...", 0);
@@ -706,7 +704,7 @@ namespace HK_AREA_SEARCH
                 ReportProgress("Step 2/4: Calculating distance rasters...", 30);
                 var distanceService = new DistanceService(tempFileManager);
 
-                // ⭐ 修复: 接收工作副本路径
+                // 接收工作副本路径
                 var (processedRasters, workingAreaPath) = await distanceService.ExecuteAsync(
                     POIItems.Where(p => !p.IsEmpty).ToList(),
                     suitableAreaPath
@@ -740,12 +738,12 @@ namespace HK_AREA_SEARCH
 
                 ReportProgress("Cleaning up temporary files...", 95);
                 
-                // ⭐ 添加延迟,确保ArcGIS释放资源
+                // 添加延迟,确保ArcGIS释放资源
                 await System.Threading.Tasks.Task.Delay(1000);
                 
                 tempFileManager.CleanupAll();
 
-                // ⭐ 强制垃圾回收 (可选)
+                // 强制垃圾回收 
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
                 GC.Collect();
@@ -764,8 +762,33 @@ namespace HK_AREA_SEARCH
                 _progressDialog?.Close();
                 _progressDialog = null;
 
-                LogService.LogError($"Analysis failed: {ex.Message}");
-                MessageBox.Show($"Analysis failed: {ex.Message}", "Error");
+                // 尝试记录日志（即使失败也不影响弹窗）
+                try 
+                {
+                    LogService.LogError($"Analysis failed: {ex.ToString()}"); // 使用 ToString() 获取完整堆栈
+                }
+                catch { /* 忽略日志记录失败 */ }
+
+                // 构建包含完整堆栈信息的错误弹窗 
+                var errorMsg = new StringBuilder();
+                errorMsg.AppendLine("❌ 分析过程中发生错误！");
+                errorMsg.AppendLine();
+                errorMsg.AppendLine("【错误信息】:");
+                errorMsg.AppendLine(ex.Message);
+                errorMsg.AppendLine();
+                errorMsg.AppendLine("【堆栈跟踪 (Stack Trace)】:");
+                // 只取前几行堆栈，避免弹窗过长，或者直接显示全部
+                errorMsg.AppendLine(ex.StackTrace); 
+                
+                if (ex.InnerException != null)
+                {
+                    errorMsg.AppendLine();
+                    errorMsg.AppendLine("【内部异常 (Inner Exception)】:");
+                    errorMsg.AppendLine(ex.InnerException.ToString());
+                }
+
+                // 显示详细错误弹窗
+                MessageBox.Show(errorMsg.ToString(), "详细错误诊断", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
 
@@ -921,8 +944,7 @@ namespace HK_AREA_SEARCH
                     
                     foreach (var kvp in layers)
                     {
-                        var layer = kvp.Key as FeatureLayer;
-                        if (layer != null && layer.Name.Contains(resultFileName))
+                        if (kvp.Key is FeatureLayer layer && layer.Name.Contains(resultFileName))
                         {
                             resultLayer = layer;
                             break;
@@ -944,7 +966,7 @@ namespace HK_AREA_SEARCH
                         return;
                     }
 
-                    long firstOID = selectedOIDs.First();
+                    long firstOID = selectedOIDs[0];
                     System.Diagnostics.Debug.WriteLine($"Selected OID: {firstOID}");
 
                     await ExtractPlotDataAsync(resultLayer, firstOID);
@@ -977,76 +999,72 @@ namespace HK_AREA_SEARCH
                 };
 
                 // 查询要素
-                using (var rowCursor = layer.Search(queryFilter))
+                using var rowCursor = layer.Search(queryFilter);
+                if (rowCursor.MoveNext())
                 {
-                    if (rowCursor.MoveNext())
+                    using var row = rowCursor.Current;
+                    // 提取所有字段(除了 Shape 字段)
+                    var definition = row.GetTable().GetDefinition();
+
+                    foreach (var field in definition.GetFields())
                     {
-                        using (var row = rowCursor.Current)
+                        // 跳过几何字段
+                        if (field.FieldType == FieldType.Geometry)
+                            continue;
+
+                        try
                         {
-                            // ⭐ 修改: 提取所有字段(除了 Shape 字段)
-                            var definition = row.GetTable().GetDefinition();
-                            
-                            foreach (var field in definition.GetFields())
-                            {
-                                // 跳过几何字段
-                                if (field.FieldType == FieldType.Geometry)
-                                    continue;
+                            var value = row[field.Name];
+                            allFieldValues[field.Name] = value;
 
-                                try
-                                {
-                                    var value = row[field.Name];
-                                    allFieldValues[field.Name] = value;
-                                    
-                                    System.Diagnostics.Debug.WriteLine($"  {field.Name}: {value}");
-                                    
-                                    // 仍然提取 Rating 用于描述生成
-                                    if (field.Name == "Rating")
-                                    {
-                                        plotInfo.GridCode = Convert.ToDouble(value);
-                                    }
-                                    
-                                    // 仍然保存单因子得分(用于文字描述)
-                                    if (field.Name.StartsWith("S_") && 
-                                        (field.FieldType == FieldType.Double || field.FieldType == FieldType.Single))
-                                    {
-                                        plotInfo.FactorScores[field.Name] = Convert.ToDouble(value);
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    System.Diagnostics.Debug.WriteLine($"  ⚠️ Failed to read {field.Name}: {ex.Message}");
-                                }
+                            System.Diagnostics.Debug.WriteLine($"  {field.Name}: {value}");
+
+                            // 仍然提取 Rating 用于描述生成
+                            if (field.Name == "Rating")
+                            {
+                                plotInfo.GridCode = Convert.ToDouble(value);
                             }
 
-                            // 提取几何范围
-                            if (row is Feature feature)
+                            // 仍然保存单因子得分(用于文字描述)
+                            if (field.Name.StartsWith("S_") &&
+                                (field.FieldType == FieldType.Double || field.FieldType == FieldType.Single))
                             {
-                                var geometry = feature.GetShape();
-                                if (geometry != null)
-                                {
-                                    plotInfo.Extent = geometry.Extent;
-
-                                    if (geometry is Polygon polygon)
-                                    {
-                                        plotInfo.Area = polygon.Area;
-                                        System.Diagnostics.Debug.WriteLine($"Area: {plotInfo.Area:F2} m²");
-                                    }
-                                }
+                                plotInfo.FactorScores[field.Name] = Convert.ToDouble(value);
                             }
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"  ⚠️ Failed to read {field.Name}: {ex.Message}");
                         }
                     }
 
-                    // ⭐ 更新 UI（必须在 UI 线程）
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    // 提取几何范围
+                    if (row is Feature feature)
                     {
-                        UpdatePlotDetails(plotInfo, allFieldValues);
-                    });
+                        var geometry = feature.GetShape();
+                        if (geometry != null)
+                        {
+                            plotInfo.Extent = geometry.Extent;
 
-                    // 缩放到地块
-                    await ZoomToPlotAsync(plotInfo.Extent);
-
-                    System.Diagnostics.Debug.WriteLine("✅ Plot data extracted successfully");
+                            if (geometry is Polygon polygon)
+                            {
+                                plotInfo.Area = polygon.Area;
+                                System.Diagnostics.Debug.WriteLine($"Area: {plotInfo.Area:F2} m²");
+                            }
+                        }
+                    }
                 }
+
+                // 更新 UI（必须在 UI 线程）
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    UpdatePlotDetails(plotInfo, allFieldValues);
+                });
+
+                // 缩放到地块
+                await ZoomToPlotAsync(plotInfo.Extent);
+
+                System.Diagnostics.Debug.WriteLine("✅ Plot data extracted successfully");
             }
             catch (Exception ex)
             {
@@ -1068,7 +1086,7 @@ private void UpdatePlotDetails(PlotInfo plotInfo, Dictionary<string, object> all
         // 保存当前地块信息
         SelectedPlotInfo = plotInfo;
 
-        // ⭐ 1. 填充所有字段到表格
+        //  1. 填充所有字段到表格
         FeatureAttributes = new ObservableCollection<FieldAttributeItem>();
         
         foreach (var kvp in allFieldValues.OrderBy(x => x.Key))
@@ -1109,9 +1127,9 @@ private void UpdatePlotDetails(PlotInfo plotInfo, Dictionary<string, object> all
 }
 
 /// <summary>
-/// ⭐ 新增: 格式化字段值显示
+///  格式化字段值显示
 /// </summary>
-private string FormatFieldValue(object value)
+private static string FormatFieldValue(object value)
 {
     if (value == null || value == DBNull.Value)
         return "<NULL>";
@@ -1134,7 +1152,7 @@ private string FormatFieldValue(object value)
 /// <summary>
 /// ⭐ 修改: 简化描述文字生成,直接使用原始字段名
 /// </summary>
-private string GeneratePlotDescription(PlotInfo plotInfo)
+private static string GeneratePlotDescription(PlotInfo plotInfo)
 {
     var sb = new StringBuilder();
 
@@ -1239,7 +1257,7 @@ private string GeneratePlotDescription(PlotInfo plotInfo)
 /// <summary>
 /// 缩放到选中地块
 /// </summary>
-private async System.Threading.Tasks.Task ZoomToPlotAsync(Envelope extent)
+private static async System.Threading.Tasks.Task ZoomToPlotAsync(Envelope extent)
 {
     if (extent == null)
     {
