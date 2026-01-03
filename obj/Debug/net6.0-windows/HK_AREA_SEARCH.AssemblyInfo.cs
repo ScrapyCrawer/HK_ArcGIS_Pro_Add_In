@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HK_AREA_SEARCH")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+700ec75d7bff8a97cd8e778e54941ca63ca486af")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0bccded96c0a64fcfe9d24e658d2f9ad482e6da2")]
 [assembly: System.Reflection.AssemblyProductAttribute("HK_AREA_SEARCH")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HK_AREA_SEARCH")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

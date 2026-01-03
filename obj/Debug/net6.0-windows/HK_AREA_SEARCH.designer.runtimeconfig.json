@@ -12,8 +12,7 @@
       }
     ],
     "additionalProbingPaths": [
-      "C:\\Users\\HP-User\\.nuget\\packages",
-      "D:\\VisualStdio\\Shared\\NuGetPackages"
+      "C:\\Users\\86187\\.nuget\\packages"
     ],
     "configProperties": {
       "Microsoft.NETCore.DotNetHostPolicy.SetAppPaths": true

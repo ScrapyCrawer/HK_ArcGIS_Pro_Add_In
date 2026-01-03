@@ -4,7 +4,7 @@
 library
 C#
 .cs
-D:\VisualStdio\source\repos\HK_ArcGIS_Pro_Add_In\obj\Debug\net6.0-windows\
+D:\VS2026\program_file\HK\obj\Debug\net6.0-windows\
 HK_AREA_SEARCH
 none
 false
@@ -13,7 +13,7 @@ TRACE;DEBUG;NET;NET6_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR
 3-809655864
 7601681568
 46-580730061
-208-1217761177
+2081521667299
 main_dockpane.xaml;Views\CustomIntervalDialog.xaml;Views\ProgressDialog.xaml;
 
 False

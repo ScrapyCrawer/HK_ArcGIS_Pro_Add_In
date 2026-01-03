@@ -1,5 +1,7 @@
 is_global = true
 build_property.TargetFramework = net6.0-windows
+build_property.TargetFrameworkIdentifier = .NETCoreApp
+build_property.TargetFrameworkVersion = v6.0
 build_property.TargetPlatformMinVersion = 7.0
 build_property.UsingMicrosoftNETSdkWeb = 
 build_property.ProjectTypeGuids = 
@@ -8,7 +10,7 @@ build_property.PlatformNeutralAssembly =
 build_property.EnforceExtendedAnalyzerRules = 
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = HK_AREA_SEARCH
-build_property.ProjectDir = D:\VisualStdio\source\repos\HK_ArcGIS_Pro_Add_In\
+build_property.ProjectDir = D:\VS2026\program_file\HK\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.CsWinRTUseWindowsUIXamlProjections = false

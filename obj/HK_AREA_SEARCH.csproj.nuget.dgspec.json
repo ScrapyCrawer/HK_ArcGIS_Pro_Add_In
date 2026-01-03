@@ -1,24 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "D:\\VisualStdio\\source\\repos\\HK_ArcGIS_Pro_Add_In\\HK_AREA_SEARCH.csproj": {}
+    "D:\\VS2026\\program_file\\HK\\HK_AREA_SEARCH.csproj": {}
   },
   "projects": {
-    "D:\\VisualStdio\\source\\repos\\HK_ArcGIS_Pro_Add_In\\HK_AREA_SEARCH.csproj": {
+    "D:\\VS2026\\program_file\\HK\\HK_AREA_SEARCH.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\VisualStdio\\source\\repos\\HK_ArcGIS_Pro_Add_In\\HK_AREA_SEARCH.csproj",
+        "projectUniqueName": "D:\\VS2026\\program_file\\HK\\HK_AREA_SEARCH.csproj",
         "projectName": "HK_AREA_SEARCH",
-        "projectPath": "D:\\VisualStdio\\source\\repos\\HK_ArcGIS_Pro_Add_In\\HK_AREA_SEARCH.csproj",
-        "packagesPath": "C:\\Users\\HP-User\\.nuget\\packages\\",
-        "outputPath": "D:\\VisualStdio\\source\\repos\\HK_ArcGIS_Pro_Add_In\\obj\\",
+        "projectPath": "D:\\VS2026\\program_file\\HK\\HK_AREA_SEARCH.csproj",
+        "packagesPath": "C:\\Users\\86187\\.nuget\\packages\\",
+        "outputPath": "D:\\VS2026\\program_file\\HK\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "D:\\VisualStdio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\HP-User\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Users\\86187\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -44,7 +40,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net6.0-windows7.0": {
@@ -82,7 +78,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.101\\RuntimeIdentifierGraph.json"
         }
       },
       "runtimes": {
