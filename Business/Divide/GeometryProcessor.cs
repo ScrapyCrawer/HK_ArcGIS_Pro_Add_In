@@ -49,22 +49,18 @@ namespace HK_AREA_SEARCH.Business.Divide
                     
                     LogService.LogInfo($"Output: {outputPath}");
 
-                    // 执行 Union 工具
+                    // 执行arcgispro的union 工具
                     LogService.LogInfo("Executing analysis.Union...");
 
-                    string inputFeaturesParam;
-                    if (inputPaths.Count == 1)
-                        inputFeaturesParam = inputPaths[0];
-                    else
-                        inputFeaturesParam = string.Join(";", inputPaths);
-
-                    // 记录实际传入 GP 的参数（非常重要）
-                    LogService.LogInfo($"GP Input Features Param: {inputFeaturesParam}");
-
-                    // 构造参数并执行
                     var environment = Geoprocessing.MakeEnvironmentArray(overwriteoutput: true);
-                    var parameters = Geoprocessing.MakeValueArray(inputFeaturesParam, outputPath);
-                    var result = await Geoprocessing.ExecuteToolAsync("analysis.Union", parameters, environment, null, null, GPExecuteToolFlags.AddToHistory);
+                    var parameters = Geoprocessing.MakeValueArray(inputPaths, outputPath);
+                    var result = await Geoprocessing.ExecuteToolAsync(
+                        "analysis.Union", 
+                        parameters,
+                        environment,
+                        null, 
+                        null,
+                        GPExecuteToolFlags.AddToHistory);
 
                     if (result.IsFailed)
                     {

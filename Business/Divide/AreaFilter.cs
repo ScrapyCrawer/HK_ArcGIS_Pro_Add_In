@@ -35,7 +35,7 @@ namespace HK_AREA_SEARCH.Divide
                     string outputPath = _tempFileManager.CreateTempFile("area_filtered.shp");
                     _tempFileManager.RegisterTempFile(outputPath);
 
-                    // ⭐ 构建SQL查询条件
+                    // 构建SQL查询条件
                     string whereClause = BuildWhereClause(minArea, maxArea);
 
                     System.Diagnostics.Debug.WriteLine($"Area filter WHERE clause: {whereClause}");
@@ -84,7 +84,7 @@ namespace HK_AREA_SEARCH.Divide
                 throw new ArgumentException($"Maximum area ({maxArea.Value}) cannot be less than minimum area ({actualMinArea})");
             }
 
-            // ⭐ 验证:最大面积如果设置,必须大于0
+            //  验证:最大面积如果设置,必须大于0
             if (maxArea.HasValue && maxArea.Value <= 0)
             {
                 throw new ArgumentException($"Maximum area must be greater than 0 (current: {maxArea.Value})");
