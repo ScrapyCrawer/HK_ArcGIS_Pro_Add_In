@@ -79,7 +79,7 @@
 
 ### 前置条件
 
-- ✅ Windows 10/11 (64-bit)
+- ✅ Windows 11 (64-bit)
 - ✅ [ArcGIS Pro 3.0+](https://www.esri.com/en-us/arcgis/products/arcgis-pro) (已授权)
 - ✅ [.NET 6.0 SDK](https://dotnet.microsoft.com/download/dotnet/6.0)
 - ✅ [Visual Studio 2022](https://visualstudio.microsoft.com/) (可选，用于开发)
@@ -108,7 +108,7 @@ HK_AREA_SEARCH.sln
 ## 📖 使用指南
 
 ### 基础工作流程
-graph LR A[准备数据] --> B[选择研究区域] B --> C[配置 POI 数据] C --> D[设置权重] D --> E[运行分析] E --> F[查看结果] F --> G[导出评分地图]
+A[准备数据] --> B[选择研究区域] B --> C[配置 POI 数据] C --> D[设置权重] D --> E[运行分析] E --> F[查看结果] F --> G[浏览评分地图]
 
 ### 详细步骤
 
