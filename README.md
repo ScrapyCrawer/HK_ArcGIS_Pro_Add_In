@@ -135,16 +135,48 @@ POI 配置，例如:
 
 #### 3️⃣ 查看结果
 
-- **评分图层**：自动添加到地图，使用色带渲染（红→黄→绿）
+- **评分图层**：自动添加到地图，可手动渲染
 - **属性表**：包含各 POI 评分字段和综合 Rating 字段
-- **统计报告**：显示分析区域数量、平均评分等
+- **统计报告**：显示分析地块属性、评分等
 
 ---
 
 ## 📂 项目结构
-HK_AREA_SEARCH/ │ ├── 📁 Business/                           # 🎯 业务逻辑层 │   │ │   ├── 📁 Distance/                       # 📏 距离分析模块 │   │   ├── DistanceService.cs            # 距离计算服务（主控制器） │   │   │                                  # - ExecuteAsync(): 批量 POI 距离计算 │   │   │                                  # - GenerateUniqueFieldName(): 字段名生成 │   │   │                                  # - CreateWorkingCopy(): 工作副本创建 │   │   │ │   │   ├── EuclideanDistanceCalculator.cs # 欧氏距离计算器 │   │   │                                  # - CalculateAsync(): 矢量→栅格距离 │   │   │                                  # - SetMaxDistance(): 距离阈值配置 │   │   │ │   │   ├── ZonalStatisticsService.cs     # 分区统计服务 │   │   │                                  # - ExecuteZonalStatsAsync(): 区域统计 │   │   │                                  # - JoinFieldAsync(): 字段连接 │   │   │ │   │   └── RasterReclassifier.cs         # 栅格重分类器 │   │                                      # - ReclassifyAsync(): 等间隔/自定义分级 │   │ │   ├── 📁 Divide/                         # ✂️ 分区分析模块 │   │   ├── DivideService.cs              # 分区服务（主控制器） │   │   │                                  # - ExecuteAsync(): 分区工作流 │   │   │                                  # - DivideByDistrict(): 按行政区分割 │   │   │                                  # - DivideByArea(): 按面积分割 │   │   │ │   │   ├── AreaFilter.cs                 # 面积过滤器 │   │   │                                  # - FilterByAreaAsync(): 面积范围筛选 │   │   │                                  # - EnsureAreaFieldAsync(): Shape_Area 字段管理 │   │   │                                  # - BuildWhereClause(): SQL 条件构建 │   │   │ │   │   ├── GeometryProcessor.cs          # 几何处理器 │   │   │                                  # - SimplifyGeometry(): 几何简化 │   │   │                                  # - RepairGeometry(): 几何修复 │   │   │                                  # - ValidateTopology(): 拓扑验证 │   │   │ │   │   └── ConstraintMerger.cs           # 约束合并器 │   │                                      # - MergeConstraints(): 多约束叠加 │   │                                      # - EraseConstraints(): 擦除不适宜区域 │   │ │   └── 📁 Rating/                         # ⭐ 评分模块 │       ├── RatingService.cs              # 评分服务（主控制器） │       │                                  # - CalculateComprehensiveRating(): 综合评分 │       │                                  # - ApplyWeights(): 权重应用 │       │                                  # - NormalizeScores(): 归一化处理 │       │ │       └── IntersectionAnalyzer.cs       # 交集分析器 │                                          # - AnalyzeIntersection(): 图层相交分析 │                                          # - ExtractOverlapAreas(): 重叠区域提取 │ ├── 📁 Infrastructure/                     # 🛠️ 基础设施层 │   │ │   ├── 📁 Services/                       # 🔧 基础服务 │   │   ├── TempFileManager.cs            # 临时文件管理器 │   │   │                                  # - CreateTempFile(): 创建临时文件 │   │   │                                  # - RegisterTempFile(): 注册文件跟踪 │   │   │                                  # - CleanupAll(): 批量清理 │   │   │                                  # - GetTempFolder(): 临时目录管理 │   │   │ │   │   └── SymbologyManager.cs           # 符号系统管理器 │   │                                      # - ApplyGraduatedColors(): 色带渲染 │   │                                      # - CreateClassBreaks(): 分级断点 │   │ │   └── 📁 Common/                         # 📦 公共组件 │       └── Constants.cs                  # 常量定义 │                                          # - RATING_FIELD: "Rating" │                                          # - AREA_FIELD: "AREA_M2" │                                          # - NUM_CLASSES: 10 │ ├── 📁 Models/                             # 📊 数据模型层 │   ├── POIDataItem.cs                    # POI 数据项模型 │   │                                      # 属性: │   │                                      # - DataPath: 数据路径 │   │                                      # - Distance: 影响距离 │   │                                      # - Weight: 权重系数 │   │                                      # - CustomInterval: 自定义间隔开关 │   │                                      # - IsRasterData: 栅格数据标志 │   │ │   └── IntervalClassItem.cs             # 区间分类项模型 │                                          # 属性: │                                          # - StartValue: 起始值 │                                          # - EndValue: 结束值 │                                          # - ClassValue: 分类值 │ ├── 📁 ViewModels/                         # 🎨 视图模型层 (MVVM) │   └── main_dockpaneViewModel.cs         # 主面板 ViewModel │                                          # 命令: │                                          # - StartAnalysisCommand: 开始分析 │                                          # - ClearPOIDataCommand: 清除数据 │                                          # - OpenCustomIntervalDialogCommand │                                          # 属性: │                                          # - POIDataList: POI 数据集合 │                                          # - SelectedAnalysisArea: 选中研究区域 │                                          # - MinArea/MaxArea: 面积过滤范围 │ ├── 📁 Views/                              # 🖼️ 视图层 (WPF) │   └── main_dockpane.xaml                # 主面板界面 │                                          # UI 组件: │                                          # - MapLayerComboBox: 图层选择 │                                          # - POIDataGrid: POI 数据表格 │                                          # - AreaFilterControls: 面积过滤控件 │                                          # - ProgressBar: 进度条 │ ├── 📁 Images/                             # 🎨 资源文件 │   └── [图标文件]                         # 工具栏图标、按钮图标 │ ├── Config.daml                           # ⚙️ ArcGIS Pro 配置文件 │                                          # - 定义 DockPane、Button、Tool │                                          # - 配置 Ribbon 界面 │                                          # - 注册插件组件 │ ├── Module1.cs                            # 🔌 插件模块入口 │                                          # - OnClick(): 插件初始化 │                                          # - CanUnload(): 卸载检查 │ ├── HK_AREA_SEARCH.csproj                 # 📦 项目文件 │                                          # - 依赖包配置 │                                          # - 编译选项 │ └── README.md                             # 📖 项目文档
+
+```
+HK_AREA_SEARCH/
+├── Business/                          # 业务逻辑层
+│   ├── Distance/                      # 距离分析模块
+│   │   ├── DistanceService.cs
+│   │   ├── EuclideanDistanceCalculator.cs
+│   │   ├── ZonalStatisticsService.cs
+│   │   └── RasterReclassifier.cs
+│   ├── Divide/                        # 分区分析模块
+│   │   ├── DivideService.cs
+│   │   ├── AreaFilter.cs
+│   │   ├── GeometryProcessor.cs
+│   │   └── ConstraintMerger.cs
+│   └── Rating/                        # 评分模块
+│       ├── RatingService.cs
+│       └── IntersectionAnalyzer.cs
+├── Infrastructure/                    # 基础设施层
+│   ├── Services/
+│   │   ├── TempFileManager.cs
+│   │   └── SymbologyManager.cs
+│   └── Common/
+│       └── Constants.cs
+├── Models/                            # 数据模型
+│   ├── POIDataItem.cs
+│   └── IntervalClassItem.cs
+├── ViewModels/                        # 视图模型
+│   └── main_dockpaneViewModel.cs
+├── Views/                             # 视图
+│   └── main_dockpane.xaml
+└── Config.daml                        # ArcGIS Pro 配置
+```
 
 2. **配置调试**
+
 // 1. 依赖注入 public class DistanceService : IDistanceService { private readonly TempFileManager _tempFileManager;
 public DistanceService(TempFileManager tempFileManager)
 {
