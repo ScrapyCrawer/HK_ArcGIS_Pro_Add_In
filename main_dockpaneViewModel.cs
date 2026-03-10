@@ -147,7 +147,7 @@ namespace HK_AREA_SEARCH
             set { SetProperty(ref _selectedTabIndex, value, () => SelectedTabIndex); }
         }
 
-        //  修改: 改为显示所有字段
+        //  显示所有字段
         private ObservableCollection<FieldAttributeItem> _featureAttributes;
         public ObservableCollection<FieldAttributeItem> FeatureAttributes
         {
@@ -230,7 +230,7 @@ namespace HK_AREA_SEARCH
             { 
                 SetProperty(ref _isPlotListeningEnabled, value, () => IsPlotListeningEnabled);
                 NotifyPropertyChanged(() => PlotListeningButtonText);
-                NotifyPropertyChanged(() => PlotListeningButtonColor);
+                // NotifyPropertyChanged(() => PlotListeningButtonColor);
             }
         }
 
@@ -239,15 +239,11 @@ namespace HK_AREA_SEARCH
         /// </summary>
         public string PlotListeningButtonText
         {
-            get { return IsPlotListeningEnabled ? "🔴 Stop Browsing" : "🟢 Browse Plots"; }
-        }
-
-        /// <summary>
-        /// 浏览地块按钮颜色
-        /// </summary>
-        public string PlotListeningButtonColor
-        {
-            get { return IsPlotListeningEnabled ? "#FFDC143C" : "#FF32CD32"; }
+            // 使用纯文本提示
+            get { return IsPlotListeningEnabled ? "■ Stop Browsing" : "▶ Browse Plots"; }
+            
+            // 或使用 Unicode 符号，兼容性更好
+            // get { return IsPlotListeningEnabled ? "⬛ Stop Browsing" : "▶ Browse Plots"; }
         }
 
         #endregion
@@ -908,14 +904,14 @@ namespace HK_AREA_SEARCH
         /// </summary>
         private void OnMapSelectionChanged(MapSelectionChangedEventArgs args)
         {
-            // ⭐ 只有启用监听时才处理
+            // 只有启用监听时才处理
             if (!IsPlotListeningEnabled)
             {
                 System.Diagnostics.Debug.WriteLine("⚠️ Plot listening is disabled, ignoring selection");
                 return;
             }
             
-            // ⭐ 检查是否已设置结果 Shapefile 路径
+            // 检查是否已设置结果 Shapefile 路径
             if (string.IsNullOrEmpty(ResultShapefilePath))
             {
                 System.Diagnostics.Debug.WriteLine("⚠️ Result Shapefile Path not set, ignoring selection");
@@ -935,10 +931,10 @@ namespace HK_AREA_SEARCH
                         return;
                     }
 
-                    // ⭐ 修复：将 SelectionSet 转换为 Dictionary
+                    // 将 SelectionSet 转换为 Dictionary
                     var layers = selection.ToDictionary();
                     
-                    // ⭐ 查找匹配结果 Shapefile 的图层
+                    // 查找匹配结果 Shapefile 的图层
                     FeatureLayer resultLayer = null;
                     string resultFileName = System.IO.Path.GetFileNameWithoutExtension(ResultShapefilePath);
                     
@@ -1228,7 +1224,7 @@ private static string GeneratePlotDescription(PlotInfo plotInfo)
             sb.AppendLine($"⚠️ Main Disadvantages (Score ≤ 3):");
             foreach (var factor in disadvantages)
             {
-                // ⭐ 直接显示原始字段名
+                // 直接显示原始字段名
                 sb.AppendLine($"   • {factor.Key}: {factor.Value:F2}");
             }
             sb.AppendLine();

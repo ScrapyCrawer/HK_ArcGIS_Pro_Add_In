@@ -32,24 +32,20 @@ namespace HK_AREA_SEARCH.Business.Divide
         {
             try
             {
-                LogService.LogInfo("╔════════════════════════════════════════╗");
                 LogService.LogInfo("║  Divide Service - Execute Started      ║");
-                LogService.LogInfo("╚════════════════════════════════════════╝");
                 
                 await ValidateInputs(analysisAreaPath, constraintPaths);
                 
-                LogService.LogInfo("Step 1: Merging constraints...");
-                string mergedConstraintsPath = await MergeConstraints(constraintPaths);
-                
-                LogService.LogInfo("Step 2: Performing difference operation...");
-                string differenceResultPath = await PerformDifference(analysisAreaPath, mergedConstraintsPath, outputPath);
-                
-                LogService.LogInfo("Step 3: Filtering by area...");
-                string filteredResultPath = await FilterByArea(differenceResultPath, minArea, maxArea);
+                // 不再合并约束条件，直接逐个擦除
+                LogService.LogInfo("Step 1: Iteratively erasing constraints...");
+                string suitableAreaPath = await IterativeErase(analysisAreaPath, constraintPaths);
+
+                LogService.LogInfo("Step 2: Filtering by area...");
+                string filteredResultPath = await FilterByArea(suitableAreaPath, minArea, maxArea);  // ⚠️ 直接使用 suitableAreaPath
 
                 if (filteredResultPath != outputPath)
                 {
-                    LogService.LogInfo("Step 4: Copying to output path...");
+                    LogService.LogInfo("Step 3: Copying to output path...");
                     await CopyToOutputPath(filteredResultPath, outputPath);
                 }
 
@@ -63,7 +59,7 @@ namespace HK_AREA_SEARCH.Business.Divide
                 // 尝试记录日志，忽略错误
                 try { LogService.LogError($"Divide Service failed: {ex.Message}"); } catch { }
                 
-                // 修改这里：抛出包含完整堆栈信息的异常
+                // 抛出包含完整堆栈信息的异常
                 throw new Exception($"划分可建设土地失败。\n\n>>> 错误详情:\n{ex.Message}\n\n>>> 堆栈跟踪:\n{ex.StackTrace}", ex);
             }
         }
@@ -93,25 +89,31 @@ namespace HK_AREA_SEARCH.Business.Divide
         }
 
         /// <summary>
-        /// 合并约束条件
+        /// 迭代擦除约束条件
+        /// 思路: 从分析区域开始，逐个擦除每个约束条件
         /// </summary>
-        private async Task<string> MergeConstraints(List<string> constraintPaths)
-        {
-            // 直接调用静态方法，不需要创建实例
-            return await GeometryProcessor.Union(constraintPaths, _tempFileManager);
-        }
-
-        /// <summary>
-        /// 执行差集运算
-        /// </summary>
-        private async Task<string> PerformDifference(string analysisAreaPath, string constraintsPath, string outputPath)
-        {
-            // 创建临时输出路径
-            string tempOutputPath = _tempFileManager.CreateTempFile("difference_result.shp");
-            _tempFileManager.RegisterTempFile(tempOutputPath);
-
-            // 直接调用静态方法，不需要创建实例
-            return await GeometryProcessor.Difference(analysisAreaPath, constraintsPath, tempOutputPath);
+        private async Task<string> IterativeErase(string analysisAreaPath, List<string> constraintPaths)
+        {   
+            // 当前工作路径，初始为分析区域
+            string currentPath = analysisAreaPath;
+            
+            for (int i = 0; i < constraintPaths.Count; i++)
+            {
+                string constraintPath = constraintPaths[i];
+                string constraintName = Path.GetFileNameWithoutExtension(constraintPath);
+                
+                // 创建临时输出路径
+                string tempOutputPath = _tempFileManager.CreateTempFile($"erase_step_{i + 1}.shp");
+                _tempFileManager.RegisterTempFile(tempOutputPath);
+                
+                // 执行擦除操作
+                currentPath = await GeometryProcessor.Difference(currentPath, constraintPath, tempOutputPath);
+                
+                LogService.LogInfo($"       ✓ Step {i + 1} completed");
+            }
+            
+            LogService.LogInfo($"   ✅ All constraints erased successfully");
+            return currentPath;
         }
 
         /// <summary>

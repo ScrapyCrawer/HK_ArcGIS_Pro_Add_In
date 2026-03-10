@@ -158,7 +158,7 @@ namespace HK_AREA_SEARCH.Rating
                 whereClause
             );
 
-            // ⭐ 改为 GPExecuteToolFlags.None 防止自动添加到地图
+            // 改为 GPExecuteToolFlags.None 防止自动添加到地图
             var result = await Geoprocessing.ExecuteToolAsync(
                 "analysis.Select",
                 parameters,

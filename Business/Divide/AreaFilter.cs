@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Linq;  
 using System.Threading.Tasks;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Core.Data;  
 using HK_AREA_SEARCH.Infrastructure.Services;
 using HK_AREA_SEARCH.Common;
+using System.IO;  
 
 namespace HK_AREA_SEARCH.Divide
 {
@@ -32,19 +35,25 @@ namespace HK_AREA_SEARCH.Divide
             {
                 try
                 {
+                    System.Diagnostics.Debug.WriteLine($"========== Area Filtering Started ==========");
+                    System.Diagnostics.Debug.WriteLine($"Input: {inputPath}");
+                    
+                    // 1. 确保输入文件有 Shape_Area 字段
+                    await EnsureAreaFieldAsync(inputPath);
+
                     string outputPath = _tempFileManager.CreateTempFile("area_filtered.shp");
                     _tempFileManager.RegisterTempFile(outputPath);
 
-                    // 构建SQL查询条件
+                    // 2. 构建SQL查询条件
                     string whereClause = BuildWhereClause(minArea, maxArea);
 
                     System.Diagnostics.Debug.WriteLine($"Area filter WHERE clause: {whereClause}");
 
-                    // 使用 Select 工具根据面积筛选
+                    // 3. 使用 Select 工具根据面积筛选
                     var parameters = Geoprocessing.MakeValueArray(
                         inputPath,
                         outputPath,
-                        whereClause  // SQL查询条件
+                        whereClause
                     );
 
                     var result = await Geoprocessing.ExecuteToolAsync(
@@ -58,16 +67,124 @@ namespace HK_AREA_SEARCH.Divide
 
                     if (result.IsFailed)
                     {
-                        throw new Exception($"Area filtering failed: {result.ErrorMessages}");
+                        var errorMessages = string.Join("; ", 
+                            result.ErrorMessages.Select(m => m.Text));
+                        
+                        System.Diagnostics.Debug.WriteLine($"[ERROR] Select tool failed: {errorMessages}");
+                        
+                        foreach (var msg in result.Messages)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[GP Message] {msg.Type}: {msg.Text}");
+                        }
+                        
+                        throw new Exception($"Area filtering failed: {errorMessages}");
                     }
 
+                    System.Diagnostics.Debug.WriteLine($"[INFO] ✓ Area filtering completed: {outputPath}");
                     return outputPath;
                 }
                 catch (Exception ex)
                 {
+                    System.Diagnostics.Debug.WriteLine($"[ERROR] Area filtering error: {ex.Message}");
                     throw new Exception($"Area filtering error: {ex.Message}", ex);
                 }
             });
+        }
+
+        /// <summary>
+        /// 确保文件有 Shape_Area 字段并已计算面积
+        /// </summary>
+        private async Task EnsureAreaFieldAsync(string inputPath)
+        {
+            System.Diagnostics.Debug.WriteLine($"Checking Shape_Area field...");
+            
+            try
+            {
+                string directory = Path.GetDirectoryName(inputPath);
+                string filename = Path.GetFileNameWithoutExtension(inputPath);
+
+                var fileConnection = new FileSystemConnectionPath(new Uri(directory), FileSystemDatastoreType.Shapefile);
+                using (var datastore = new FileSystemDatastore(fileConnection))
+                using (var table = datastore.OpenDataset<Table>(filename))
+                {
+                    var definition = table.GetDefinition();
+                    var fields = definition.GetFields();
+
+                    // 检查是否已有 Shape_Area 字段
+                    var areaField = fields.FirstOrDefault(f => 
+                        f.Name.Equals("Shape_Area", StringComparison.OrdinalIgnoreCase) ||
+                        f.Name.Equals("Shape_Ar", StringComparison.OrdinalIgnoreCase));
+
+                    if (areaField != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"✓ Found existing area field: {areaField.Name}");
+                        return;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"⚠️ Field check failed: {ex.Message}");
+            }
+
+            // 如果没有字段，添加并计算
+            System.Diagnostics.Debug.WriteLine($"Adding Shape_Area field...");
+
+            // 1. 添加字段 (Shapefile 字段名最多10个字符，所以用 Shape_Area)
+            var addFieldParams = Geoprocessing.MakeValueArray(
+                inputPath,
+                "Shape_Area",
+                "DOUBLE",
+                null,
+                null,
+                null,
+                "",
+                "NULLABLE"
+            );
+
+            var addFieldResult = await Geoprocessing.ExecuteToolAsync(
+                "AddField_management",
+                addFieldParams,
+                null,
+                null,
+                null,
+                GPExecuteToolFlags.AddToHistory
+            );
+
+            if (addFieldResult.IsFailed)
+            {
+                var errorMsg = string.Join("; ", addFieldResult.ErrorMessages.Select(m => m.Text));
+                throw new Exception($"Failed to add Shape_Area field: {errorMsg}");
+            }
+
+            System.Diagnostics.Debug.WriteLine($"✓ Shape_Area field added");
+
+            // 2. 计算面积（使用 !shape.area! 获取面积，单位取决于数据的坐标系）
+            var calcParams = Geoprocessing.MakeValueArray(
+                inputPath,
+                "Shape_Area",
+                "!shape.area!",
+                "PYTHON3",
+                "",
+                "DOUBLE"
+            );
+
+            var calcResult = await Geoprocessing.ExecuteToolAsync(
+                "CalculateField_management",
+                calcParams,
+                null,
+                null,
+                null,
+                GPExecuteToolFlags.AddToHistory
+            );
+
+            if (calcResult.IsFailed)
+            {
+                var errorMsg = string.Join("; ", calcResult.ErrorMessages.Select(m => m.Text));
+                throw new Exception($"Failed to calculate area: {errorMsg}");
+            }
+
+            System.Diagnostics.Debug.WriteLine($"✓ Area calculated successfully");
         }
 
         /// <summary>
@@ -90,18 +207,22 @@ namespace HK_AREA_SEARCH.Divide
                 throw new ArgumentException($"Maximum area must be greater than 0 (current: {maxArea.Value})");
             }
 
+            // 使用 InvariantCulture 格式化数字，避免区域设置问题
+            var minAreaStr = actualMinArea.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var maxAreaStr = maxArea?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
             if (maxArea.HasValue)
             {
                 // 有最大面积限制
                 if (actualMinArea > 0)
                 {
                     // 有最小和最大限制
-                    return $"Shape_Area >= {actualMinArea} AND Shape_Area <= {maxArea.Value}";
+                    return $"Shape_Area >= {minAreaStr} AND Shape_Area <= {maxAreaStr}";
                 }
                 else
                 {
                     // 只有最大限制
-                    return $"Shape_Area <= {maxArea.Value}";
+                    return $"Shape_Area <= {maxAreaStr}";
                 }
             }
             else
@@ -110,7 +231,7 @@ namespace HK_AREA_SEARCH.Divide
                 if (actualMinArea > 0)
                 {
                     // 只有最小限制
-                    return $"Shape_Area >= {actualMinArea}";
+                    return $"Shape_Area >= {minAreaStr}";
                 }
                 else
                 {

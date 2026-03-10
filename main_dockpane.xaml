@@ -145,7 +145,9 @@
                                                    VerticalAlignment="Center"
                                                    Margin="0,0,5,0"/>
                                         <TextBox Grid.Column="1"
-                                                 Text="{Binding MinArea, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2, TargetNullValue=''}"
+                                                 Text="{Binding MinArea, Mode=TwoWay, 
+                                                UpdateSourceTrigger=LostFocus, 
+                                                StringFormat=N2, TargetNullValue=''}"
                                                  VerticalContentAlignment="Center"
                                                  HorizontalContentAlignment="Right"
                                                  ToolTip="Minimum area in square meters"
@@ -156,7 +158,9 @@
                                                    VerticalAlignment="Center"
                                                    Margin="0,0,5,0"/>
                                         <TextBox Grid.Column="3"
-                                                 Text="{Binding MaxArea, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2, TargetNullValue=''}"
+                                                 Text="{Binding MaxArea, Mode=TwoWay, 
+                                        UpdateSourceTrigger=LostFocus,  
+                                        StringFormat=N2, TargetNullValue=''}"
                                                  VerticalContentAlignment="Center"
                                                  HorizontalContentAlignment="Right"
                                                  ToolTip="Maximum area in square meters"/>
@@ -417,7 +421,7 @@
 
                             <!-- 标题 -->
                             <TextBlock Grid.Row="0" 
-                                       Text="📁 Select Result Shapefile" 
+                                       Text="📁 Select Shapefile" 
                                        FontSize="13" 
                                        FontWeight="Bold" 
                                        Margin="0,0,0,8"
@@ -486,12 +490,11 @@
                                     </Grid.ColumnDefinitions>
 
                                     <!-- 标题 -->
-                                    <TextBlock Grid.Column="0"
-                                               Text="📊 Feature Attributes" 
+                                    <TextBlock Grid.Column="0" 
                                                FontSize="14" 
                                                FontWeight="Bold" 
                                                FontFamily="Microsoft YaHei"
-                                               VerticalAlignment="Center"/>
+                                               VerticalAlignment="Center"><Run Text="📊 "/><Run Language="zh-cn" Text="Plot Information"/></TextBlock>
 
                                     <!--  浏览地块按钮 -->
                                     <Button Grid.Column="1"
@@ -500,15 +503,21 @@
                                             FontSize="11"
                                             FontFamily="Microsoft YaHei"
                                             Padding="10,5"
+                                            MinWidth="120"
+                                            Margin="10,0,0,0"
                                             Foreground="White"
-                                            BorderThickness="0"
-                                            ToolTip="Click to enable/disable plot browsing mode" 
-                                            BorderBrush="#FFD81A1A">
+                                            BorderThickness="1"
+                                            ToolTip="Click to enable/disable plot browsing mode">
                                         <Button.Style>
                                             <Style TargetType="Button">
-                                                <Setter Property="Background" Value="{Binding PlotListeningButtonColor}"/>
+                                                <!-- 默认绿色背景 -->
+                                                <Setter Property="Background" Value="#FF32CD32"/>
                                                 <Setter Property="Cursor" Value="Hand"/>
                                                 <Style.Triggers>
+                                                    <!-- 启用时变红色 -->
+                                                    <DataTrigger Binding="{Binding IsPlotListeningEnabled}" Value="True">
+                                                        <Setter Property="Background" Value="#FFDC143C"/>
+                                                    </DataTrigger>
                                                     <Trigger Property="IsMouseOver" Value="True">
                                                         <Setter Property="Opacity" Value="0.8"/>
                                                     </Trigger>
@@ -519,7 +528,7 @@
                                 </Grid>
                             </Border>
 
-                            <!-- ⭐ 修改: 显示所有字段名和值 -->
+                            <!-- 显示所有字段名和值 -->
                             <DataGrid Grid.Row="1" 
                                       ItemsSource="{Binding FeatureAttributes}"
                                       AutoGenerateColumns="False"

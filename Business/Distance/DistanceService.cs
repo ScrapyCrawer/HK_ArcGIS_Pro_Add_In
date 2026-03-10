@@ -188,7 +188,7 @@ namespace HK_AREA_SEARCH.Distance
                 // 移除路径和扩展名
                 string fileName = Path.GetFileNameWithoutExtension(poiName);
                 
-                // ⭐ 修复: 移除所有非字母数字字符(包括空格、中文、特殊符号)
+                // 修复: 移除所有非字母数字字符(包括空格、中文、特殊符号)
                 baseName = Regex.Replace(fileName, @"[^a-zA-Z0-9]", "");
                 
                 // 如果提取后为空(纯中文文件名或只有特殊字符),使用序号
@@ -244,7 +244,7 @@ namespace HK_AREA_SEARCH.Distance
             
             _usedFieldNames.Add(uniqueFieldName);
             
-            // ⭐ 新增: 验证字段名合法性
+            // 验证字段名合法性
             if (!IsValidFieldName(uniqueFieldName))
             {
                 throw new InvalidOperationException($"生成的字段名 '{uniqueFieldName}' 不符合 Shapefile 规范 (原始名称: '{poiName}')");
@@ -256,7 +256,7 @@ namespace HK_AREA_SEARCH.Distance
         }
 
         /// <summary>
-        /// ⭐ 新增: 验证字段名是否符合 Shapefile 规范
+        /// 验证字段名是否符合 Shapefile 规范
         /// </summary>
         private bool IsValidFieldName(string fieldName)
         {
@@ -308,7 +308,7 @@ namespace HK_AREA_SEARCH.Distance
 
             System.Diagnostics.Debug.WriteLine($"✅ 分区统计完成: {statsTable}");
 
-            // ⭐ 使用新的字段名生成方法
+            // 使用新的字段名生成方法
             string scoreFieldName = GenerateUniqueFieldName(poiItem.DataName, index);
             
             await ConvertDistanceToScore(statsTable, scoreFieldName, poiItem);
@@ -376,7 +376,7 @@ namespace HK_AREA_SEARCH.Distance
         }
 
         /// <summary>
-        /// ⭐ 改进: 添加字段(支持跳过前缀检查)
+        /// 添加字段(支持跳过前缀检查)
         /// </summary>
         private async Task AddField(string tablePath, string fieldName, string fieldType, bool skipPrefixCheck = false)
         {
@@ -425,7 +425,7 @@ namespace HK_AREA_SEARCH.Distance
         private string BuildEqualIntervalExpression(string fieldName, POIDataItem poiItem)
         {
             int numClasses = 10;
-            double maxDistance = Math.Abs(poiItem.Distance ?? 1000);  // ⭐ 取绝对值
+            double maxDistance = Math.Abs(poiItem.Distance ?? 1000);  // 取绝对值
             double interval = maxDistance / numClasses;
 
             // ⭐ 判断是否为厌恶型设施 (Distance < 0)
@@ -438,13 +438,13 @@ namespace HK_AREA_SEARCH.Distance
 
             var conditions = new List<string>();
             
-            // ⭐ 构建 Distance 内的评分区间
+            // 构建 Distance 内的评分区间
             for (int i = 0; i < numClasses; i++)
             {
                 double lower = i * interval;
                 double upper = (i + 1) * interval;
                 
-                // ⭐ 关键修改: 厌恶型设施反向评分
+                // 关键修改: 厌恶型设施反向评分
                 int score;
                 if (isUndesirable)
                 {
@@ -462,18 +462,18 @@ namespace HK_AREA_SEARCH.Distance
                 System.Diagnostics.Debug.WriteLine($"  区间 [{lower:F1}, {upper:F1}) -> 分数 {score}");
             }
 
-            // ⭐ 构建嵌套三元表达式 (从最后一个条件开始)
+            // 构建嵌套三元表达式 (从最后一个条件开始)
             string expression;
             
             if (isUndesirable)
             {
-                // 🔥 厌恶型设施: Distance 外得 10 分 (越远越好)
+                //厌恶型设施: Distance 外得 10 分 (越远越好)
                 expression = "10";  // 默认值改为 10
                 System.Diagnostics.Debug.WriteLine($"  距离 >= {maxDistance} 米 -> 分数 10 (超出范围,最高分)");
             }
             else
             {
-                // 🔥 吸引型设施: Distance 外得 0 分 (越近越好)
+                //吸引型设施: Distance 外得 0 分 (越近越好)
                 expression = "0";  // 默认值保持 0
                 System.Diagnostics.Debug.WriteLine($"  距离 >= {maxDistance} 米 -> 分数 0 (超出范围,最低分)");
             }
@@ -516,7 +516,7 @@ namespace HK_AREA_SEARCH.Distance
         {
             var calculator = new EuclideanDistanceCalculator(_tempFileManager);
             
-            // ⭐ 修复: 无论正负都传递绝对值
+            //修复: 无论正负都传递绝对值
             if (poiItem.Distance.HasValue && poiItem.Distance.Value != 0)
             {
                 calculator.SetMaxDistance(Math.Abs(poiItem.Distance.Value));
